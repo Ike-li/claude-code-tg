@@ -5,17 +5,21 @@ for running `tgcc` as a self-hosted Telegram bridge to Claude Code CLI.
 
 ## Install And Upgrade
 
-Install from the public repository:
+Install from PyPI:
 
 ```bash
-uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
+uv tool install claude-code-tg
 tgcc --version
 ```
 
-`tgcc` is published on PyPI as of `0.8.3` (`uv tool install claude-code-tg`);
-the latest tagged release is `v0.8.3`. The Git URL still works for the latest
-dev build or a local editable install; for long-running instances, record
-`tgcc --version` and the installed commit.
+`tgcc` is published on PyPI as of `0.8.3`; the latest tagged release is `v0.8.3`.
+The Git URL still works for the latest dev build:
+
+```bash
+uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
+```
+
+For long-running instances, record `tgcc --version` and the installed commit.
 
 For local development:
 

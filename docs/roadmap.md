@@ -17,9 +17,9 @@ CLI rather than grow into a general AI bot platform.
    `--model`/`--effort` behavior.
 4. Attachment retention automation hardening: continue improving
    `ATTACHMENT_RETENTION_DAYS` validation and logs.
-5. Distribution hardening: establish a public release/tag process before
-   documenting tagged `uv tool install` guidance; evaluate PyPI publishing only
-   after the first preview release is stable.
+5. Distribution: PyPI Trusted Publishing is live
+   (`uv tool install claude-code-tg`) via a tag-triggered GitHub Actions release
+   workflow; keep release notes, tags, and docs aligned on each version.
 
 ## Beta Exit Criteria
 

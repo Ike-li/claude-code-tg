@@ -43,8 +43,9 @@ claude auth login
 ## Step 3: 安装并配置 (1 分钟)
 
 ```bash
-# 安装 tgcc
-uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
+# 安装 tgcc（PyPI）
+uv tool install claude-code-tg
+# 或装最新开发版：uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 
 # 进入你想让 Claude 操作的项目目录
 cd /path/to/your/project
