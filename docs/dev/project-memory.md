@@ -56,7 +56,7 @@ Validation after this milestone:
 - Review feedback for the Telegram native UI milestone was fixed.
 - A real Telegram E2E pass on 2026-06-04 covered private-chat UI, copy buttons,
   ForceReply, group chat, Draft Preview, and the optional Mini App. Results,
-  runbook, and findings live under `docs/e2e/`.
+  runbook, and findings live under `docs/dev/e2e/`.
 - The first E2E fix pass enabled concurrent Telegram update handling, kept
   per-chat run/queue serialization in local state, reduced no-op status-card
   edits, and surfaced Mini App action errors in the WebView.
@@ -80,8 +80,8 @@ Validation after this milestone:
 
 Before running a new full Telegram E2E session, read:
 
-- `docs/e2e/telegram-e2e.md`
-- `docs/e2e/telegram-e2e-findings.md`
+- `docs/dev/e2e/telegram-e2e.md`
+- `docs/dev/e2e/telegram-e2e-findings.md`
 
 Historical lessons from the 2026-06-04 run:
 
@@ -122,30 +122,28 @@ seed final-result card, slow progress runs, result-card `状态`, expired
 queued-rerun pass used the CoreGraphics click helper and showed the persistent
 `已排队 (1/3)` message before the queued run drained and sent a final answer.
 Remaining evidence gaps are limited to automation-fragile real-client cases and
-are recorded in `docs/e2e/telegram-e2e.md` and
-`docs/e2e/telegram-e2e-findings.md`.
+are recorded in `docs/dev/e2e/telegram-e2e.md` and
+`docs/dev/e2e/telegram-e2e-findings.md`.
 
 ## Documentation Handoff
 
-The documentation set was consolidated on 2026-06-05. The project now has 21
-Markdown files, with `docs/index.md` acting as the document map and ownership
-table. Keep future updates in the most specific owner document instead of
+The documentation set was consolidated on 2026-06-05. The project uses `docs/index.md` as the document map and ownership table. Keep future updates in the most specific owner document instead of
 duplicating setup, security, or E2E details across multiple entry points.
 
 Current high-level ownership:
 
-- `README.md` is the Chinese landing page; `README.en.md` is the short English
-  entry point.
+- `README.md` is the Chinese landing page; `README.en.md` is the English
+  landing page kept in parity with the Chinese one.
 - `docs/quickstart.md` is the shortest first-run path; `docs/user-guide.md` is
   the source of truth for daily Telegram behavior and configuration.
 - `docs/troubleshooting.md` handles symptom checks; `docs/operator-guide.md`
   handles long-running operations and incident response.
 - `SECURITY.md` handles private reporting and deployment checklist;
   `docs/security-model.md` handles trust boundaries and controls.
-- `docs/architecture.md` handles internal design; `docs/e2e/telegram-e2e.md`
-  and `docs/e2e/telegram-e2e-findings.md` handle real Telegram test procedure
+- `docs/architecture.md` handles internal design; `docs/dev/e2e/telegram-e2e.md`
+  and `docs/dev/e2e/telegram-e2e-findings.md` handle real Telegram test procedure
   and compact closure notes.
-- `CHANGELOG.md` summarizes the current pre-release line; use git history for
+- `CHANGELOG.md` summarizes the 0.8.0 line; use git history for
   granular internal checkpoints.
 
 ## Useful Entry Points
@@ -172,5 +170,5 @@ Current high-level ownership:
 - Keep model/effort docs and `/model`/`/effort` behavior aligned with current
   Claude Code CLI behavior.
 - Revisit README screenshots or GIFs only with sanitized assets.
-- Avoid adding per-tool Telegram approval cards in the current preview line;
+- Avoid adding per-tool Telegram approval cards in the current Alpha line;
   that remains a non-goal unless the product direction changes.

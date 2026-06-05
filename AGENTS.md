@@ -4,11 +4,14 @@
 
 This is a Python 3.11+ package for bridging Telegram chats to the Claude Code CLI.
 Source lives in `src/claude_code_tg/`; the main areas are bot wiring
-(`bot.py`, `bot_app.py`, `bot_commands.py`), CLI/config (`cli.py`, `config.py`),
-Claude execution (`executor.py`), sessions (`sessions.py`, `claude_sessions.py`),
-attachments, diagnostics, and file-security helpers. Tests live in `tests/` and
-mirror source modules with `test_*.py` files. User and maintainer docs live in
-`docs/`; assets are under `docs/assets/`. Local helper scripts live in `scripts/`.
+(`bot.py`, `bot_app.py`, `bot_commands.py`), the CLI (`cli.py`, `cli_parser.py`,
+`cli_init.py`, `cli_instances.py`) and config (`config.py`), Claude execution
+(`executor.py`), sessions (`sessions.py`, `claude_sessions.py`), command menu
+(`command_menu.py`), attachments, diagnostics, interaction logging, and
+file-security helpers. See `docs/architecture.md` for the full module map. Tests
+live in `tests/` and mirror source modules with `test_*.py` files. User docs
+live in `docs/`; contributor/maintainer notes live in `docs/dev/`; assets are
+under `docs/assets/`. Local helper scripts live in `scripts/`.
 
 ## Build, Test, and Development Commands
 
@@ -23,24 +26,25 @@ mirror source modules with `test_*.py` files. User and maintainer docs live in
 
 ## Session Handoff
 
-When opening a fresh maintainer or agent session, read `docs/project-memory.md`
-first, then run `git log -2 --oneline` before making assumptions about current
-state. For Telegram E2E work, also read `docs/e2e/telegram-e2e.md` and
-`docs/e2e/telegram-e2e-findings.md` before starting a real-client run.
+When opening a fresh maintainer or agent session, read
+`docs/dev/project-memory.md` first, then run `git log -2 --oneline` before
+making assumptions about current state. For Telegram E2E work, also read
+`docs/dev/e2e/telegram-e2e.md` and `docs/dev/e2e/telegram-e2e-findings.md`
+before starting a real-client run.
 
 ## Documentation Maintenance
 
 Use `docs/index.md` as the document map before adding or moving docs. Keep
-`README.md` as the Chinese landing page, `README.en.md` as the short English
-entry point, `docs/quickstart.md` as the shortest first-run path, and
-`docs/user-guide.md` as the source of truth for day-to-day Telegram behavior.
-Prefer linking to the specific owner document over repeating setup, security,
-or E2E details in multiple files.
+`README.md` as the Chinese landing page, `README.en.md` as the English landing
+page (kept in parity with the Chinese one), `docs/quickstart.md` as the shortest
+first-run path, and `docs/user-guide.md` as the source of truth for day-to-day
+Telegram behavior. Prefer linking to the specific owner document over repeating
+setup, security, or E2E details in multiple files.
 
 Do not add new run-specific Telegram E2E docs for ordinary test passes; update
-`docs/e2e/telegram-e2e.md` for procedure changes and
-`docs/e2e/telegram-e2e-findings.md` for compact closure notes. Use
-`docs/project-memory.md` only for current handoff state, not long-lived user
+`docs/dev/e2e/telegram-e2e.md` for procedure changes and
+`docs/dev/e2e/telegram-e2e-findings.md` for compact closure notes. Use
+`docs/dev/project-memory.md` only for current handoff state, not long-lived user
 documentation.
 
 ## Coding Style & Naming Conventions
@@ -74,7 +78,7 @@ keep the throwaway Claude project outside this repository via
 test groups and BotFather settings live in Telegram itself, not in git.
 
 Telegram E2E procedure and historical closure status are captured under
-`docs/e2e/`. Notable lessons:
+`docs/dev/e2e/`. Notable lessons:
 Computer Use is useful for Telegram buttons, ForceReply, and Mini App menu
 checks, but it uses the user's active Mac pointer, keyboard, and focused
 window; it is not an isolated second keyboard/mouse. Telegram Desktop attachment

@@ -148,16 +148,16 @@ group contexts, or full tool logs.
 | `config.py`, `cli_init.py` | Env parsing, defaults, validation, and `tgcc init`. |
 | `cli_instances.py`, `instance_store.py`, `process_control.py` | Multi-env discovery, instance paths, PID/log/status metadata, and process lifecycle. |
 | `bot.py`, `bot_app.py` | TGBot state, authorization, Telegram Application wiring, jobs, and update intake. |
-| `bot_commands.py` | Telegram commands, callbacks, ForceReply, settings, resume, and command picker flows. |
+| `bot_commands.py`, `command_menu.py` | Telegram commands, callbacks, ForceReply, settings, resume, command picker flows, and Claude slash-command menu probing/pass-through. |
 | `bot_processing.py` | Claude run lifecycle, status card updates, final answer, queue drain. |
 | `executor.py` | Claude subprocess creation, `stream-json` parsing, cancellation, and `RunEvent` emission. |
-| `sessions.py` | Chat sessions, queues, model/effort/permission overrides, last Claude runtime metadata, and `status.json` persistence. |
+| `sessions.py`, `claude_sessions.py` | Chat sessions, queues, model/effort/permission overrides, `status.json` persistence, and discovery/parsing of local Claude Code session transcripts for `/resume`. |
 | `run_view.py`, `result_view.py`, `resume_view.py`, `command_view.py` | Telegram UI rendering and short-token stores. |
 | `message_input.py`, `attachments.py`, `attachment_cleanup.py` | Telegram text/photo/document conversion, attachment modes, and cleanup. |
 | `message_output.py`, `telegram_ui.py` | Telegram pagination, HTML escaping, and button helpers. |
 | `pending_reply.py` | Process-local ForceReply pending store. |
 | `web_console.py` | Optional Mini App API, static page, and initData authentication. |
-| `diagnostics.py`, `file_security.py`, `sanitizer.py`, `utils.py` | Doctor checks, owner-only file helpers, redaction, and shared utilities. |
+| `diagnostics.py`, `file_security.py`, `sanitizer.py`, `interaction_log.py`, `utils.py` | Doctor checks, owner-only file helpers, redaction, optional interaction logging, and shared utilities. |
 
 ## Concurrency
 

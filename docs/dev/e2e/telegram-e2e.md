@@ -221,7 +221,7 @@ uv run python scripts/e2e_reset_telegram_menu.py --env cctg_test.env
 ## Result Template
 
 Create a dated result file only for substantial new full runs or releases. Keep
-routine evidence in PR summaries or `project-memory.md`.
+routine evidence in PR summaries or `../project-memory.md`.
 
 ```markdown
 # Telegram E2E Results: YYYY-MM-DD
