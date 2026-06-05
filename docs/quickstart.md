@@ -53,12 +53,14 @@ cd /path/to/your/project
 tgcc init
 ```
 
-`tgcc init` 会问你：
+`tgcc init` 默认是**快速模式**，只问 3 个必填项：
 - **Bot Token**: 粘贴 Step 2.1 的 token
-- **Admin User IDs**: 粘贴 Step 2.2 的数字 ID
-- **Allowed User IDs**: 直接回车（默认和 Admin 相同）
+- **你的 User ID**: 粘贴 Step 2.2 的数字 ID
 - **Project Directory**: 直接回车（默认是当前目录）
-- **Permission Mode**: 直接回车（默认 `bypassPermissions`，适合个人可信项目）
+
+其余配置（权限模式、白名单、模型、附件等）自动套用合理默认值，写入 `.env` 后可随时编辑修改。
+
+> 想逐项配置全部选项？用 `tgcc init --full`。
 
 ---
 

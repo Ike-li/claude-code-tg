@@ -43,6 +43,10 @@ cp .env.example prod.env
 chmod 600 prod.env
 ```
 
+`tgcc init` defaults to a quick setup that asks only the three essentials (bot
+token, your user ID, project directory) and fills sane defaults for everything
+else. Use `tgcc init --full` to be prompted for every option instead.
+
 `tgcc init` secures the generated env file itself with `0600` permissions but
 does not chmod the project directory that contains it.
 Use one dedicated BotFather token per instance, and revoke or rotate any token

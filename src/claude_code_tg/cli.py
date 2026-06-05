@@ -168,7 +168,8 @@ def cmd_start(args: argparse.Namespace) -> None:
     _reject_symlinked_env_file(env_file)
     if not env_file.exists():
         print(
-            f"Error: {env_file} not found. Copy .env.example and fill in your config."
+            f"Error: {env_file} not found. Run 'tgcc init' to create it "
+            "(or copy .env.example and fill it in)."
         )
         sys.exit(1)
 
@@ -332,7 +333,8 @@ def cmd_foreground(args: argparse.Namespace) -> None:
     _reject_symlinked_env_file(env_file)
     if not env_file.exists():
         print(
-            f"Error: {env_file} not found. Copy .env.example and fill in your config."
+            f"Error: {env_file} not found. Run 'tgcc init' to create it "
+            "(or copy .env.example and fill it in)."
         )
         sys.exit(1)
     os.environ["DOTENV_PATH"] = str(env_file.resolve())
