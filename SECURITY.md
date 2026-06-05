@@ -10,14 +10,13 @@ For the full trust-boundary model, see
 
 ## Supported Versions
 
-Security fixes target the current `main` branch until public preview tags are
-published. After tags exist, support remains best effort and focuses on the
-latest public preview line.
+Security fixes are best effort and focus on the latest tagged release (`v0.8.0`)
+and the current `main` branch.
 
 | Version or branch | Security support |
 | --- | --- |
-| Current `main` before the first public tagged release | Best-effort fixes for issues affecting the current codebase. |
-| Latest public preview tag, once published | Best-effort fixes for issues affecting the latest public preview release. |
+| Latest tagged release (`v0.8.0`) | Best-effort fixes for issues affecting the latest release. |
+| Current `main` | Best-effort fixes for issues affecting the current codebase. |
 | Older tags or commits | Not supported; upgrade before reporting unless the issue still affects supported code. |
 
 ## Reporting A Vulnerability

@@ -21,7 +21,7 @@ Send command on Telegram → tgcc calls Claude Code CLI locally → Results deli
 # Install
 uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 
-# Configure (guided setup for bot token and user ID)
+# Configure (quick wizard: 3 essentials only; use tgcc init --full for every option)
 tgcc init
 
 # Start
@@ -71,12 +71,16 @@ Then message your bot in Telegram!
 ### Managing Multiple Bots Locally
 
 ```bash
+# Check configuration before starting
+tgcc doctor --env prod.env
+
 # Check all instance statuses
 tgcc status --all
 
-# Batch start/stop
+# Batch start / stop / restart
 tgcc start-all
 tgcc stop-all
+tgcc restart-all
 
 # View specific instance logs
 tgcc logs --env prod.env -f
@@ -152,11 +156,11 @@ Full documentation index: [Documentation Index](docs/index.md)
 
 ## 🚧 Current Status
 
-This is `0.1.0` Alpha preview:
+This is `0.8.0` Alpha (tagged `v0.8.0`):
 
 ✅ **Implemented**: Text conversations, file input, multi-instance management, session resume, permission modes, queues, log redaction, CI
 
-⏳ **Not Yet**: PyPI publishing, public release tags
+⏳ **Not Yet**: PyPI publishing (install via git for now)
 
 Run full local validation:
 ```bash
@@ -173,7 +177,7 @@ Contributions welcome! Before submitting PRs:
 uv sync --extra dev
 uv run pytest --cov=claude_code_tg
 uv run ruff check .
-uv run mypy
+uv run --extra dev mypy
 uv run ruff format --check .
 ```
 

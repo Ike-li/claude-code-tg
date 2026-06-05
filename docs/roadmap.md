@@ -1,6 +1,6 @@
 # Roadmap
 
-This roadmap keeps the `0.1.0` preview direction explicit. It is intentionally
+This roadmap keeps the `0.8.0` Alpha direction explicit. It is intentionally
 small: `tgcc` should remain a local, self-hosted Telegram bridge for Claude Code
 CLI rather than grow into a general AI bot platform.
 
@@ -34,7 +34,7 @@ CLI rather than grow into a general AI bot platform.
   redaction.
 - The README, English README, support policy, and changelog remain aligned.
 
-## Non-Goals For 0.1.0 Preview
+## Non-Goals For The Alpha Line
 
 - Managed cloud hosting or a hosted control plane.
 - Enterprise SSO, RBAC, audit logging, or compliance reporting.

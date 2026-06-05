@@ -1,13 +1,13 @@
 # Compatibility Matrix
 
-This matrix documents the support boundary for the `0.1.0` preview line. It is
+This matrix documents the support boundary for the `0.8.0` Alpha line. It is
 not a promise that every dependency version or operating system variant is
 fully covered; it is the compatibility target maintainers use when triaging
 issues.
 
 ## Runtime Support
 
-| Area | `0.1.0` preview status | Notes |
+| Area | `0.8.0` Alpha status | Notes |
 |------|----------------------|-------|
 | Python 3.11 | Supported | Covered by CI. |
 | Python 3.12 | Supported | Covered by CI. |
@@ -24,8 +24,8 @@ issues.
 | Telegram Bot API | A dedicated BotFather token for each instance. | Temporary smoke-test tokens must be rotated or revoked before public release. |
 | python-telegram-bot | `python-telegram-bot[job-queue]~=22.7`. | Managed through `pyproject.toml`. |
 | Starlette/Uvicorn | Optional via `mini-app` extra. | Required only when `TELEGRAM_MINI_APP_ENABLED=true`. |
-| uv | Recommended installer and development tool. | Use `uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"` for public Git installs. The public repository does not currently maintain a public tagged release; record `tgcc --version` and the installed commit for repeatable deployments. CI and release automation pin workflow `UV_VERSION` to `0.11.17` before running frozen sync. |
-| PyPI | Not published for the `0.1.0` preview. | Git installs are the documented public installation path. |
+| uv | Recommended installer and development tool. | Use `uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"` for public Git installs. The latest tagged release is `v0.8.0`; record `tgcc --version` and the installed commit for repeatable deployments. CI and release automation pin workflow `UV_VERSION` to `0.11.17` before running frozen sync. |
+| PyPI | Not published as of `0.8.0`. | Git installs are the documented public installation path. |
 
 ## Validation Baseline
 

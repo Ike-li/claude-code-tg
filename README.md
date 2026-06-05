@@ -21,7 +21,7 @@
 # 1. 安装
 uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 
-# 2. 配置（会引导你填写 Telegram Bot Token 和用户 ID）
+# 2. 配置（快速向导，只问 3 个必填项；用 tgcc init --full 可配置全部选项）
 tgcc init
 
 # 3. 启动
@@ -71,12 +71,16 @@ tgcc start
 ### 本地管理多个 Bot
 
 ```bash
+# 启动前自检配置
+tgcc doctor --env prod.env
+
 # 查看所有实例状态
 tgcc status --all
 
-# 批量启动/停止
+# 批量启动 / 停止 / 重启
 tgcc start-all
 tgcc stop-all
+tgcc restart-all
 
 # 查看某个实例的日志
 tgcc logs --env prod.env -f
@@ -152,11 +156,11 @@ tgcc logs --env prod.env -f
 
 ## 🚧 当前状态
 
-这是 `0.1.0` Alpha 预览版：
+这是 `0.8.0` Alpha 版本（已打 tag `v0.8.0`）：
 
 ✅ **已实现**：文本对话、文件输入、多实例管理、会话恢复、权限模式、队列、日志脱敏、CI
 
-⏳ **尚未**：PyPI 发布、公开 release tag
+⏳ **尚未**：发布到 PyPI（目前通过 git 安装）
 
 运行完整本地校验：
 ```bash
@@ -173,7 +177,7 @@ uv run python scripts/validate_local.py
 uv sync --extra dev
 uv run pytest --cov=claude_code_tg
 uv run ruff check .
-uv run mypy
+uv run --extra dev mypy
 uv run ruff format --check .
 ```
 

@@ -12,14 +12,15 @@ versioning once tagged releases begin.
 - Lightweight Telegram bridge for Claude Code CLI with per-chat sessions,
   `/resume`, `/model`, `/permissions`, `/stop`, status cards, copy buttons, and
   queued execution.
-- Multi-instance `tgcc` CLI for `init`, `doctor`, `start`, `stop`, `status`,
-  `logs`, and attachment pruning across one or more `.env` files.
+- Multi-instance `tgcc` CLI for `init`, `doctor`, `start`, `stop`, `restart`,
+  `status`, `logs`, `foreground`, the `*-all` batch variants, and attachment
+  pruning across one or more `.env` files.
 - Telegram-native UI support for `sendChatAction`, ForceReply prompts, optional
   Draft Preview, and an optional private-chat Mini App console.
 - Attachment handling modes for local paths, project-local copies, and explicit
   rejection, with retention cleanup and owner-only storage.
 - Operator, user, security, support, compatibility, roadmap, E2E, maintainer,
-  and contributor documentation for the Alpha preview line.
+  and contributor documentation for the `0.8.0` Alpha line.
 - CI, packaging metadata, CODEOWNERS, issue templates, Code of Conduct,
   coverage reporting, mypy, Ruff, and build validation.
 
@@ -51,6 +52,6 @@ versioning once tagged releases begin.
 
 ### Historical Note
 
-This changelog summarizes the pre-release `0.1.0` line instead of preserving
-every unreleased internal checkpoint. Git history remains the source for
-granular implementation details before the first public tag.
+`0.8.0` is the first tagged release (`v0.8.0`). This changelog summarizes the
+work that led up to it instead of preserving every unreleased internal
+checkpoint; git history remains the source for granular implementation details.

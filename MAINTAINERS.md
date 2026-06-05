@@ -5,7 +5,7 @@ release ownership, maintainer-only actions, and triage expectations.
 
 ## Current Maintainer
 
-- @Ike-li is the current maintainer and release owner for the `0.1.0` preview
+- @Ike-li is the current maintainer and release owner for the `0.8.0` Alpha
   line.
 
 The maintainer owns repository settings, security-response routing, and final
@@ -37,7 +37,7 @@ Before announcing a public Alpha release, the release owner should:
 
 ## Triage Expectations
 
-This is a preview project, so maintainer response is best effort. Issues are
+This is an Alpha project, so maintainer response is best effort. Issues are
 easier to review when reporters use the templates and include sanitized version
 and environment context.
 

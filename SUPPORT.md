@@ -34,7 +34,7 @@ public issues or pull requests.
 
 ## Scope
 
-In scope for the current preview line:
+In scope for the current Alpha line:
 
 - install and upgrade guidance
 - Telegram bot setup and allowlist behavior
@@ -42,7 +42,7 @@ In scope for the current preview line:
 - multi-instance `*.env` management
 - logs and attachment handling
 
-Out of scope for the current preview line:
+Out of scope for the current Alpha line:
 
 - enterprise SSO, RBAC, or audit requirements
 - managed cloud hosting
@@ -52,6 +52,6 @@ Out of scope for the current preview line:
 
 ## Response Expectations
 
-This is a small preview project. Best-effort responses are more likely when a
+This is a small Alpha project. Best-effort responses are more likely when a
 report includes reproduction steps, versions, sanitized config shape, expected
 behavior, actual behavior, and validation commands already run.

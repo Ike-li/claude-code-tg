@@ -126,8 +126,8 @@ tgcc status
 # 查看最近日志
 tgcc logs -n 50
 
-# 确认你的 User ID 在白名单里
-cat .env | grep ALLOWED_USER_IDS
+# 确认你的 User ID 已配置（快速模式写入 ADMIN_USER_IDS）
+grep -E 'ADMIN_USER_IDS|ALLOWED_USER_IDS' .env
 ```
 
 ### "claude: command not found"
