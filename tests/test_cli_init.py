@@ -49,6 +49,7 @@ def test_cmd_init_creates_env_file(monkeypatch, tmp_path, capsys):
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = True
     cmd_init(args)
 
     config = env_file.read_text(encoding="utf-8")
@@ -83,7 +84,7 @@ def test_cmd_init_creates_env_file(monkeypatch, tmp_path, capsys):
     assert "TELEGRAM_MINI_APP_MENU_TEXT=tgcc console" in config
     assert env_file.stat().st_mode & 0o777 == 0o600
     out = capsys.readouterr().out
-    assert "Created" in out
+    assert "已创建" in out
     # Onboarding hints: a new user must learn where to get a bot token and
     # that user IDs are numeric (via @userinfobot), not @usernames.
     assert "@BotFather" in out
@@ -121,6 +122,7 @@ def test_cmd_init_reprompts_invalid_safety_mode_values(monkeypatch, tmp_path, ca
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = True
     cmd_init(args)
 
     config = env_file.read_text(encoding="utf-8")
@@ -166,6 +168,7 @@ def test_cmd_init_reprompts_invalid_numeric_values(monkeypatch, tmp_path, capsys
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = True
     cmd_init(args)
 
     config = env_file.read_text(encoding="utf-8")
@@ -212,6 +215,7 @@ def test_cmd_init_reprompts_invalid_id_lists_and_model(monkeypatch, tmp_path, ca
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = True
     cmd_init(args)
 
     config = env_file.read_text(encoding="utf-8")
@@ -243,6 +247,7 @@ def test_cmd_init_preserves_env_parent_permissions(monkeypatch, tmp_path, force)
     args = MagicMock()
     args.env = str(env_file)
     args.force = force
+    args.full = False
     cmd_init(args)
 
     assert env_file.stat().st_mode & 0o777 == 0o600
@@ -275,6 +280,7 @@ def test_cmd_init_exits_cleanly_when_stdin_closes(monkeypatch, tmp_path, capsys)
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = False
 
     with pytest.raises(SystemExit) as exc:
         cmd_init(args)
@@ -300,6 +306,7 @@ def test_cmd_init_exits_when_env_cannot_be_written(monkeypatch, tmp_path, capsys
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = False
 
     with pytest.raises(SystemExit) as exc:
         cmd_init(args)
@@ -327,6 +334,7 @@ def test_cmd_init_exits_when_exclusive_create_races_existing_file(
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = False
 
     with pytest.raises(SystemExit) as exc:
         cmd_init(args)
@@ -353,12 +361,15 @@ def test_cmd_init_warns_when_permissions_and_required_values_are_missing(
     args = MagicMock()
     args.env = str(env_file)
     args.force = False
+    args.full = False
 
     cmd_init(args)
 
     output = capsys.readouterr().out
     assert "could not set" in output
-    assert "TELEGRAM_BOT_TOKEN and ADMIN_USER_IDS are required" in output
+    assert "TELEGRAM_BOT_TOKEN" in output
+    assert "ADMIN_USER_IDS" in output
+    assert "必要条件" in output
 
 
 def test_cmd_init_force_overwrites_existing_env(monkeypatch, tmp_path):
@@ -372,10 +383,59 @@ def test_cmd_init_force_overwrites_existing_env(monkeypatch, tmp_path):
     args = MagicMock()
     args.env = str(env_file)
     args.force = True
+    args.full = False
     cmd_init(args)
 
     config = env_file.read_text(encoding="utf-8")
     assert "ORIGINAL=1" not in config
     assert "TELEGRAM_BOT_TOKEN=token" in config
     assert "ADMIN_USER_IDS=111" in config
+    assert env_file.stat().st_mode & 0o777 == 0o600
+
+
+def test_cmd_init_quick_asks_three_questions_and_uses_defaults(
+    monkeypatch, tmp_path, capsys
+):
+    """Default (quick) init asks only the 3 essentials and fills sane defaults."""
+    env_file = tmp_path / "bot.env"
+    prompts: list[str] = []
+    answers = _answers(
+        [
+            "123456:ABCDEF_test_token",
+            "123456789",
+            "/tmp/project",
+        ]
+    )
+
+    def record(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(answers)
+
+    monkeypatch.setattr("builtins.input", record)
+    monkeypatch.setattr("claude_code_tg.cli_init.shutil.which", lambda _cmd: None)
+
+    args = MagicMock()
+    args.env = str(env_file)
+    args.force = False
+    args.full = False
+    cmd_init(args)
+
+    # Quick mode must prompt for exactly the three essentials, nothing more.
+    assert len(prompts) == 3
+    assert any("TELEGRAM_BOT_TOKEN" in p for p in prompts)
+    assert any("ADMIN_USER_IDS" in p for p in prompts)
+    assert any("CLAUDE_PROJECT_DIR" in p for p in prompts)
+
+    config = env_file.read_text(encoding="utf-8")
+    assert "TELEGRAM_BOT_TOKEN=123456:ABCDEF_test_token" in config
+    assert "ADMIN_USER_IDS=123456789" in config
+    assert "CLAUDE_PROJECT_DIR=/tmp/project" in config
+    # Everything else falls back to sane defaults without asking.
+    assert "ALLOWED_USER_IDS=\n" in config
+    assert "CLAUDE_PERMISSION_MODE=bypassPermissions" in config
+    assert "CLAUDE_TIMEOUT=300" in config
+    assert "QUEUE_MAX_SIZE=3" in config
+    assert "ATTACHMENT_MODE=path" in config
+    assert "ATTACHMENT_MAX_MB=20" in config
+    assert "TELEGRAM_MINI_APP_PORT=8787" in config
     assert env_file.stat().st_mode & 0o777 == 0o600

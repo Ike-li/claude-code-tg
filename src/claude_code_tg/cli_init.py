@@ -120,6 +120,89 @@ def cmd_init(args: argparse.Namespace) -> None:
         print(f"Error: {env_file} already exists. Use --force to overwrite.")
         sys.exit(1)
 
+    full_mode = getattr(args, "full", False)
+
+    if full_mode:
+        _init_full(args, env_file)
+    else:
+        _init_quick(args, env_file)
+
+
+def _init_quick(args: argparse.Namespace, env_file: Path) -> None:
+    """Quick setup: only 3 essential questions, sensible defaults for the rest."""
+    print("╭─────────────────────────────────────────────╮")
+    print("│        tgcc · 快速配置（3 步）              │")
+    print("╰─────────────────────────────────────────────╯")
+    print()
+    print("你需要提前准备：")
+    print("  1. 找 @BotFather 创建 Bot，获取 Token")
+    print("  2. 找 @userinfobot 获取你的数字 User ID")
+    print()
+    print("─" * 46)
+
+    # ── 3 essential questions ──
+    print()
+    print("❶ Bot Token（从 @BotFather 获取）")
+    token = prompt_env_value("TELEGRAM_BOT_TOKEN")
+    print()
+
+    print("❷ 你的 Telegram User ID（数字，非 @用户名）")
+    print("   从 @userinfobot 获取")
+    admin_ids = prompt_id_list_env_value("ADMIN_USER_IDS")
+    print()
+
+    print(
+        "❸ Claude 要操作的项目目录 [默认: 当前目录]"
+    )
+    project_dir = prompt_env_value(
+        "CLAUDE_PROJECT_DIR", str(Path(".").resolve(strict=False))
+    )
+
+    # ── defaults for everything else ──
+    print()
+    print("─" * 46)
+    print("✅ 完成！以下使用默认值，可稍后编辑 .env 修改：")
+    print()
+    print("   ALLOWED_USER_IDS            (仅你一人)")
+    print("   CLAUDE_PERMISSION_MODE      bypassPermissions")
+    print("   CLAUDE_MODEL                （Claude Code 默认）")
+    print("   CLAUDE_EFFORT               （Claude Code 默认）")
+    print("   ATTACHMENT_MODE             path")
+    print("   ATTACHMENT_MAX_MB           20")
+    print("   CLAUDE_TIMEOUT              300")
+    print("   QUEUE_MAX_SIZE              3")
+    print()
+
+    content = _build_env_content(
+        token=token,
+        admin_ids=admin_ids,
+        allowed_ids="",
+        project_dir=project_dir,
+        timeout="300",
+        queue_max_size="3",
+        permission_mode="bypassPermissions",
+        model="",
+        effort="",
+        cli_resume_compat="false",
+        attachment_max_mb="20",
+        attachment_mode="path",
+        attachment_retention_days="",
+        skip_permissions="false",
+        log_interactions="false",
+        command_menu="false",
+        draft_preview="false",
+        mini_app_enabled="false",
+        mini_app_public_url="",
+        mini_app_host="127.0.0.1",
+        mini_app_port="8787",
+        mini_app_menu_text="tgcc",
+    )
+    _write_env_file(env_file, content, args)
+    _print_post_init(env_file, token, admin_ids)
+
+
+def _init_full(args: argparse.Namespace, env_file: Path) -> None:
+    """Full setup: ask every config option."""
     print("Create tgcc configuration")
     print("Press Enter to accept defaults.")
     print()
@@ -177,13 +260,63 @@ def cmd_init(args: argparse.Namespace) -> None:
     mini_app_public_url = prompt_env_value("TELEGRAM_MINI_APP_PUBLIC_URL")
     mini_app_host = prompt_env_value("TELEGRAM_MINI_APP_HOST", "127.0.0.1")
     mini_app_port = prompt_int_env_value(
-        "TELEGRAM_MINI_APP_PORT",
-        "8787",
-        minimum=1,
+        "TELEGRAM_MINI_APP_PORT", "8787", minimum=1,
     )
     mini_app_menu_text = prompt_env_value("TELEGRAM_MINI_APP_MENU_TEXT", "tgcc")
 
-    content = "\n".join(
+    content = _build_env_content(
+        token=token,
+        admin_ids=admin_ids,
+        allowed_ids=allowed_ids,
+        project_dir=project_dir,
+        timeout=timeout,
+        queue_max_size=queue_max_size,
+        permission_mode=permission_mode,
+        model=model,
+        effort=effort,
+        cli_resume_compat=cli_resume_compat,
+        attachment_max_mb=attachment_max_mb,
+        attachment_mode=attachment_mode,
+        attachment_retention_days=attachment_retention_days,
+        skip_permissions=skip_permissions,
+        log_interactions=log_interactions,
+        command_menu=command_menu,
+        draft_preview=draft_preview,
+        mini_app_enabled=mini_app_enabled,
+        mini_app_public_url=mini_app_public_url,
+        mini_app_host=mini_app_host,
+        mini_app_port=mini_app_port,
+        mini_app_menu_text=mini_app_menu_text,
+    )
+    _write_env_file(env_file, content, args)
+    _print_post_init(env_file, token, admin_ids)
+
+
+def _build_env_content(
+    token: str,
+    admin_ids: str,
+    allowed_ids: str,
+    project_dir: str,
+    timeout: str,
+    queue_max_size: str,
+    permission_mode: str,
+    model: str,
+    effort: str,
+    cli_resume_compat: str,
+    attachment_max_mb: str,
+    attachment_mode: str,
+    attachment_retention_days: str,
+    skip_permissions: str,
+    log_interactions: str,
+    command_menu: str,
+    draft_preview: str,
+    mini_app_enabled: str,
+    mini_app_public_url: str,
+    mini_app_host: str,
+    mini_app_port: str,
+    mini_app_menu_text: str,
+) -> str:
+    return "\n".join(
         [
             "# TG-Claude Code Bridge",
             "# Generated by tgcc init; keep this file 0600 and do not commit it.",
@@ -225,6 +358,11 @@ def cmd_init(args: argparse.Namespace) -> None:
             "",
         ]
     )
+
+
+def _write_env_file(
+    env_file: Path, content: str, args: argparse.Namespace
+) -> None:
     try:
         permissions_ok = write_owner_only_text(
             env_file,
@@ -241,11 +379,17 @@ def cmd_init(args: argparse.Namespace) -> None:
     if not permissions_ok:
         print(f"Warning: could not set {env_file} permissions to 0600.")
 
-    print(f"Created {env_file}")
+
+def _print_post_init(env_file: Path, token: str, admin_ids: str) -> None:
+    print(f"✅ 已创建 {env_file}")
     if not token or not admin_ids:
         print(
-            "Warning: TELEGRAM_BOT_TOKEN and ADMIN_USER_IDS are required before start."
+            "⚠️  TELEGRAM_BOT_TOKEN 和 ADMIN_USER_IDS 是启动的必要条件。"
         )
     if not shutil.which("claude"):
-        print("Warning: Claude Code CLI was not found on PATH.")
-    print(f"Next: tgcc start --env {env_file}")
+        print("⚠️  未在 PATH 中找到 Claude Code CLI，请先安装并认证。")
+    print()
+    print("🚀 下一步：")
+    print(f"   tgcc doctor --env {env_file}")
+    print(f"   tgcc start --env {env_file}")
+    print(f"   tgcc status --env {env_file}")

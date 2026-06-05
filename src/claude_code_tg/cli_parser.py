@@ -80,6 +80,11 @@ def build_parser(
     p_init.add_argument(
         "--force", action="store_true", help="Overwrite the env file if it exists"
     )
+    p_init.add_argument(
+        "--full",
+        action="store_true",
+        help="Ask every config option (default: quick setup, 3 questions)",
+    )
     p_init.set_defaults(func=handlers.init)
 
     p_attachments = sub.add_parser("attachments", help="Manage attachment files")
