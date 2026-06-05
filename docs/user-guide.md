@@ -230,11 +230,14 @@ per-chat override, and `/effort reset` restores the instance default. `x-high`
 and `x_high` are accepted as aliases for `xhigh`; `ultra-code` and `ultra_code`
 are accepted as aliases for `ultracode`.
 
-`.env.example` and `tgcc init` default to
-`CLAUDE_PERMISSION_MODE=bypassPermissions` for trusted local projects. This is
-convenient over Telegram but bypasses Claude Code permission prompts, so change
-it to `default` or `plan` before starting on untrusted/shared project
-directories. The current mode appears in `/start`, `/status`, each run status
+`CLAUDE_PERMISSION_MODE` and `/permissions` accept one of `default`,
+`acceptEdits`, `plan`, `auto`, `dontAsk`, or `bypassPermissions`, mapped to
+Claude Code `--permission-mode`. `.env.example` and `tgcc init` default to
+`bypassPermissions` for trusted local projects. This is convenient over Telegram
+but bypasses Claude Code permission prompts, so change it to `default` or `plan`
+before starting on untrusted/shared project directories. Modes broader than
+`default`/`plan` (such as `acceptEdits`, `auto`, `dontAsk`, and
+`bypassPermissions`) should stay limited to trusted users and directories. The current mode appears in `/start`, `/status`, each run status
 card, and startup/run logs. `/start`, `/status`, and run cards also show the
 effective effort. Use `/permissions <mode>` to set a per-chat permission-mode
 override, and `/permissions reset` to restore the instance default.
