@@ -1,0 +1,30 @@
+# Environment and secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+.venv/
+.hypothesis/
+
+# IDE and local orchestration
+.idea/
+.vscode/
+.omc/
+.omx/
+.antigravitycli
+.tgcc-attachments/
+
+# OS noise
+.DS_Store

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">tgcc sanitized Telegram smoke demo</title>
+  <desc id="desc">A sanitized demo of tgcc Telegram commands, Claude Code execution, and local instance controls without secrets or private paths.</desc>
+  <rect width="960" height="540" fill="#101828"/>
+  <rect x="54" y="42" width="852" height="456" rx="20" fill="#f8fafc"/>
+  <rect x="54" y="42" width="852" height="64" rx="20" fill="#0f766e"/>
+  <rect x="54" y="86" width="852" height="20" fill="#0f766e"/>
+  <text x="86" y="82" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="700">tgcc Telegram smoke demo</text>
+  <text x="705" y="81" fill="#ccfbf1" font-family="Arial, sans-serif" font-size="15">self-hosted local bridge</text>
+
+  <rect x="86" y="132" width="336" height="342" rx="16" fill="#e0f2fe"/>
+  <text x="112" y="166" fill="#0f172a" font-family="Arial, sans-serif" font-size="17" font-weight="700">Telegram chat</text>
+  <rect x="112" y="190" width="144" height="38" rx="12" fill="#ffffff"/>
+  <text x="130" y="215" fill="#0f172a" font-family="Arial, sans-serif" font-size="16">/status</text>
+  <rect x="202" y="246" width="180" height="68" rx="12" fill="#dcfce7"/>
+  <text x="222" y="272" fill="#14532d" font-family="Arial, sans-serif" font-size="15">idle</text>
+  <text x="222" y="294" fill="#14532d" font-family="Arial, sans-serif" font-size="15">mode: default</text>
+  <rect x="112" y="332" width="206" height="38" rx="12" fill="#ffffff"/>
+  <text x="130" y="357" fill="#0f172a" font-family="Arial, sans-serif" font-size="16">/permissions plan</text>
+  <rect x="202" y="388" width="180" height="42" rx="12" fill="#dcfce7"/>
+  <text x="222" y="415" fill="#14532d" font-family="Arial, sans-serif" font-size="15">mode updated</text>
+
+  <rect x="468" y="132" width="354" height="150" rx="16" fill="#f1f5f9"/>
+  <text x="494" y="166" fill="#0f172a" font-family="Arial, sans-serif" font-size="17" font-weight="700">Claude Code run</text>
+  <text x="494" y="198" fill="#334155" font-family="Arial, sans-serif" font-size="15">prompt is passed through stdin</text>
+  <text x="494" y="224" fill="#334155" font-family="Arial, sans-serif" font-size="15">stream-json result is redacted</text>
+  <text x="494" y="250" fill="#334155" font-family="Arial, sans-serif" font-size="15">reply: tgcc smoke ok</text>
+
+  <rect x="468" y="304" width="354" height="78" rx="16" fill="#fef3c7"/>
+  <text x="494" y="336" fill="#78350f" font-family="Arial, sans-serif" font-size="16" font-weight="700">Attachments</text>
+  <text x="494" y="362" fill="#78350f" font-family="Arial, sans-serif" font-size="15">path | copy-to-project | reject</text>
+
+  <rect x="468" y="404" width="354" height="70" rx="16" fill="#ede9fe"/>
+  <text x="494" y="435" fill="#3b0764" font-family="Arial, sans-serif" font-size="16" font-weight="700">Ops</text>
+  <text x="494" y="460" fill="#3b0764" font-family="Arial, sans-serif" font-size="15">status, logs, prune</text>
+
+  <text x="86" y="518" fill="#94a3b8" font-family="Arial, sans-serif" font-size="14">Sanitized demo artifact. No tokens, usernames, chat ids, or local paths.</text>
+</svg>

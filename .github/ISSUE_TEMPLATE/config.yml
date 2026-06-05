@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability report
+    url: https://github.com/Ike-li/claude-code-tg/security/advisories/new
+    about: Report vulnerabilities privately instead of posting tokens, logs, chat transcripts, or exploit details in public issues.
+  - name: Support policy
+    url: https://github.com/Ike-li/claude-code-tg/blob/main/SUPPORT.md
+    about: Check support scope, reporting paths, and what not to share publicly.

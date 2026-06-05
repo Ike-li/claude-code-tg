@@ -1,0 +1,24 @@
+# Maintainer ownership for security and runtime boundaries.
+* @Ike-li
+
+/.github/ @Ike-li
+/SECURITY.md @Ike-li
+/SUPPORT.md @Ike-li
+/CONTRIBUTING.md @Ike-li
+/CODE_OF_CONDUCT.md @Ike-li
+/MAINTAINERS.md @Ike-li
+/README.en.md @Ike-li
+/pyproject.toml @Ike-li
+/CHANGELOG.md @Ike-li
+/scripts/validate_local.py @Ike-li
+/src/claude_code_tg/ @Ike-li
+/tests/ @Ike-li
+/docs/index.md @Ike-li
+/docs/quickstart.md @Ike-li
+/docs/troubleshooting.md @Ike-li
+/docs/architecture.md @Ike-li
+/docs/user-guide.md @Ike-li
+/docs/operator-guide.md @Ike-li
+/docs/compatibility.md @Ike-li
+/docs/roadmap.md @Ike-li
+/docs/security-model.md @Ike-li
