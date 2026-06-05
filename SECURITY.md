@@ -10,12 +10,12 @@ For the full trust-boundary model, see
 
 ## Supported Versions
 
-Security fixes are best effort and focus on the latest tagged release (`v0.8.0`)
+Security fixes are best effort and focus on the latest tagged release (`v0.8.1`)
 and the current `main` branch.
 
 | Version or branch | Security support |
 | --- | --- |
-| Latest tagged release (`v0.8.0`) | Best-effort fixes for issues affecting the latest release. |
+| Latest tagged release (`v0.8.1`) | Best-effort fixes for issues affecting the latest release. |
 | Current `main` | Best-effort fixes for issues affecting the current codebase. |
 | Older tags or commits | Not supported; upgrade before reporting unless the issue still affects supported code. |
 

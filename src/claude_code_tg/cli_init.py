@@ -151,9 +151,7 @@ def _init_quick(args: argparse.Namespace, env_file: Path) -> None:
     admin_ids = prompt_id_list_env_value("ADMIN_USER_IDS")
     print()
 
-    print(
-        "❸ Claude 要操作的项目目录 [默认: 当前目录]"
-    )
+    print("❸ Claude 要操作的项目目录 [默认: 当前目录]")
     project_dir = prompt_env_value(
         "CLAUDE_PROJECT_DIR", str(Path(".").resolve(strict=False))
     )
@@ -260,7 +258,9 @@ def _init_full(args: argparse.Namespace, env_file: Path) -> None:
     mini_app_public_url = prompt_env_value("TELEGRAM_MINI_APP_PUBLIC_URL")
     mini_app_host = prompt_env_value("TELEGRAM_MINI_APP_HOST", "127.0.0.1")
     mini_app_port = prompt_int_env_value(
-        "TELEGRAM_MINI_APP_PORT", "8787", minimum=1,
+        "TELEGRAM_MINI_APP_PORT",
+        "8787",
+        minimum=1,
     )
     mini_app_menu_text = prompt_env_value("TELEGRAM_MINI_APP_MENU_TEXT", "tgcc")
 
@@ -360,9 +360,7 @@ def _build_env_content(
     )
 
 
-def _write_env_file(
-    env_file: Path, content: str, args: argparse.Namespace
-) -> None:
+def _write_env_file(env_file: Path, content: str, args: argparse.Namespace) -> None:
     try:
         permissions_ok = write_owner_only_text(
             env_file,
@@ -383,9 +381,7 @@ def _write_env_file(
 def _print_post_init(env_file: Path, token: str, admin_ids: str) -> None:
     print(f"✅ 已创建 {env_file}")
     if not token or not admin_ids:
-        print(
-            "⚠️  TELEGRAM_BOT_TOKEN 和 ADMIN_USER_IDS 是启动的必要条件。"
-        )
+        print("⚠️  TELEGRAM_BOT_TOKEN 和 ADMIN_USER_IDS 是启动的必要条件。")
     if not shutil.which("claude"):
         print("⚠️  未在 PATH 中找到 Claude Code CLI，请先安装并认证。")
     print()

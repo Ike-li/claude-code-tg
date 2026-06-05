@@ -5,7 +5,7 @@ release ownership, maintainer-only actions, and triage expectations.
 
 ## Current Maintainer
 
-- @Ike-li is the current maintainer and release owner for the `0.8.0` Alpha
+- @Ike-li is the current maintainer and release owner for the `0.8.x` Alpha
   line.
 
 The maintainer owns repository settings, security-response routing, and final

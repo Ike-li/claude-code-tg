@@ -1,6 +1,6 @@
 # Roadmap
 
-This roadmap keeps the `0.8.0` Alpha direction explicit. It is intentionally
+This roadmap keeps the `0.8.x` Alpha direction explicit. It is intentionally
 small: `tgcc` should remain a local, self-hosted Telegram bridge for Claude Code
 CLI rather than grow into a general AI bot platform.
 

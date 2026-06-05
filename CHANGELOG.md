@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog style, and this project uses semantic
 versioning once tagged releases begin.
 
+## 0.8.1 - 2026-06-05
+
+### Added
+
+- `tgcc init` quick setup mode: prompts for only the three essentials (bot
+  token, admin user id, project directory) and fills sane defaults for the rest.
+  Use `tgcc init --full` for the previous prompt-everything flow.
+- Grouped per-field comments in `.env.example` (required / common / attachments
+  / advanced / mini-app sections).
+
+### Changed
+
+- The env-not-found error in `tgcc start`/`tgcc foreground` now points to
+  `tgcc init` instead of only `.env.example`.
+- Documentation cleanup: fixed version drift to `0.8.x`, deduplicated repeated
+  command/permission/attachment tables into the User Guide as the single source
+  of truth, moved contributor/agent notes under `docs/dev/`, and tidied the
+  documentation index.
+
+### Fixed
+
+- Corrected the README `mypy` command to `uv run --extra dev mypy`.
+- Added `xhigh` to the documented `CLAUDE_EFFORT` values.
+
 ## 0.8.0 - 2026-06-05
 
 ### Added

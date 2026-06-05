@@ -156,7 +156,7 @@ Full documentation index: [Documentation Index](docs/index.md)
 
 ## 🚧 Current Status
 
-This is `0.8.0` Alpha (tagged `v0.8.0`):
+This is `0.8.1` Alpha (tagged `v0.8.1`):
 
 ✅ **Implemented**: Text conversations, file input, multi-instance management, session resume, permission modes, queues, log redaction, CI
 
