@@ -27,10 +27,10 @@ trusted-user deployments.
 
 ## What Not To Share Publicly
 
-Do not paste Telegram bot tokens, `.env` files, Claude credentials, API keys,
-private chat transcripts, unsanitized logs, local filesystem paths,
-screenshots with personal data, exploit details, or conduct incident details in
-public issues or pull requests.
+Never paste secrets or private data (tokens, `.env` files, credentials, chat
+transcripts, unsanitized logs, local paths, exploit details) into public issues
+or pull requests. See the full list in
+[SECURITY.md → Reporting A Vulnerability](SECURITY.md#reporting-a-vulnerability).
 
 ## Scope
 

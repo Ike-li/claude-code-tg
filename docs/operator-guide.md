@@ -52,49 +52,20 @@ status cards.
 
 ## Start, Stop, And Observe
 
-Routine lifecycle:
-
-```bash
-tgcc start --env prod.env
-tgcc status --env prod.env
-tgcc logs --env prod.env -n 100
-tgcc logs --env prod.env -f
-tgcc restart --env prod.env
-tgcc stop --env prod.env
-```
-
-For several local env files:
-
-```bash
-tgcc start-all
-tgcc status --all
-tgcc stop-all
-```
+See [User Guide → Daily Commands](user-guide.md#daily-commands) for the
+start/stop/status/logs/restart lifecycle and the `*-all` batch variants.
+Operators typically drive these against an explicit `--env` per project
+boundary.
 
 ## Attachment Retention
 
-Operators should choose an explicit attachment policy:
+Operators should choose an explicit attachment policy. See
+[User Guide → Attachment Handling](user-guide.md#attachment-handling) for the
+`path`/`copy-to-project`/`reject` modes and the `attachments prune` commands.
 
-- `ATTACHMENT_MODE=reject` for deployments that should not process files.
-- `ATTACHMENT_MODE=path` when files can stay in instance storage.
-- `ATTACHMENT_MODE=copy-to-project` when Claude must read attachments from the
-  project directory.
-
-Manual cleanup:
-
-```bash
-tgcc attachments prune --env prod.env --dry-run
-tgcc attachments prune --env prod.env --older-than-days 30
-```
-
-Automatic cleanup:
-
-```env
-ATTACHMENT_RETENTION_DAYS=30
-```
-
-This prunes old instance attachment caches and project `.tgcc-attachments/`
-copies on startup and daily while the bot is running.
+For unattended instances, set `ATTACHMENT_RETENTION_DAYS=30` to prune old
+instance caches and project `.tgcc-attachments/` copies on startup and daily
+while the bot is running.
 
 ## Upgrade Routine
 

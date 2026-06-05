@@ -128,35 +128,21 @@ and directories.
 
 ## Attachments Are Downloaded But Claude Cannot Read Them
 
-`ATTACHMENT_MODE=path|copy-to-project|reject` controls Telegram files:
+The common cause is `ATTACHMENT_MODE=path` combined with Claude Code's default
+permission mode, which may reject paths outside `CLAUDE_PROJECT_DIR`. Switch to
+`ATTACHMENT_MODE=copy-to-project` when Claude needs to read attachment contents
+directly.
 
-- `path` keeps files under `~/.tgcc/.../attachments` and sends that path to
-  Claude.
-- `copy-to-project` copies files into `<project>/.tgcc-attachments/` first.
-- `reject` refuses Telegram attachments.
-
-Claude Code's default permission mode may reject paths outside
-`CLAUDE_PROJECT_DIR`. Use `copy-to-project` when Claude needs to inspect the
-file contents directly. Use `reject` for deployments that should never process
-Telegram attachments.
-
-Clean old files with:
-
-```bash
-tgcc attachments prune --env <file> --dry-run
-tgcc attachments prune --env <file> --older-than-days 30
-```
-
-Set `ATTACHMENT_RETENTION_DAYS=30` for startup and daily cleanup.
+See [User Guide → Attachment Handling](user-guide.md#attachment-handling) for
+the full mode table, the `attachments prune` commands, and
+`ATTACHMENT_RETENTION_DAYS` cleanup.
 
 ## Permission Modes
 
-`.env.example` and `tgcc init` default to `bypassPermissions` for trusted local
-projects. If that is too broad for the current repo or user set, change
-`CLAUDE_PERMISSION_MODE` to `default` or `plan` before restarting. Broader modes
-such as `acceptEdits`, `auto`, `dontAsk`, and `bypassPermissions` change Claude
-Code approval behavior and should stay limited to trusted Telegram users and
-trusted project directories.
+If the default `bypassPermissions` is too broad for the current repo or user
+set, change `CLAUDE_PERMISSION_MODE` to `default` or `plan` before restarting.
+See [User Guide → Model, Effort, And Permission Modes](user-guide.md#model-effort-and-permission-modes)
+for the full behavior of each mode and the per-chat `/permissions` override.
 
 ## A Token May Have Been Exposed
 
