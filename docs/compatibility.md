@@ -24,8 +24,8 @@ issues.
 | Telegram Bot API | A dedicated BotFather token for each instance. | Temporary smoke-test tokens must be rotated or revoked before public release. |
 | python-telegram-bot | `python-telegram-bot[job-queue]~=22.7`. | Managed through `pyproject.toml`. |
 | Starlette/Uvicorn | Optional via `mini-app` extra. | Required only when `TELEGRAM_MINI_APP_ENABLED=true`. |
-| uv | Recommended installer and development tool. | Use `uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"` for public Git installs. The latest tagged release is `v0.8.1`; record `tgcc --version` and the installed commit for repeatable deployments. CI and release automation pin workflow `UV_VERSION` to `0.11.17` before running frozen sync. |
-| PyPI | Not published as of `0.8.1`. | Git installs are the documented public installation path. |
+| uv | Recommended installer and development tool. | Use `uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"` for public Git installs. The latest tagged release is `v0.8.2`; record `tgcc --version` and the installed commit for repeatable deployments. CI and release automation pin workflow `UV_VERSION` to `0.11.17` before running frozen sync. |
+| PyPI | Not published as of `0.8.2`. | Git installs are the documented public installation path. |
 
 ## Validation Baseline
 

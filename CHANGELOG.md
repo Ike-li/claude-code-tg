@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog style, and this project uses semantic
 versioning once tagged releases begin.
 
+## 0.8.2 - 2026-06-05
+
+### Security
+
+- Bump `starlette` from `0.50.0` to `>=1.0.1` (resolved to `1.2.1`) to address
+  GHSA-86qp-5c8j-p5mr / CVE-2026-48710 (missing Host header validation that can
+  poison `request.url.path` and bypass path-based security checks). starlette is
+  only used by the optional, off-by-default Mini App console, and tgcc
+  authenticates via Telegram initData HMAC rather than path-based checks, so the
+  practical exposure was low.
+
 ## 0.8.1 - 2026-06-05
 
 ### Added
