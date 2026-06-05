@@ -33,7 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mini-app = [
-    "starlette~=0.50.0",
+    "starlette~=1.0.1",
     "uvicorn~=0.38.0",
 ]
 dev = [
@@ -42,7 +42,7 @@ dev = [
     "pytest-asyncio>=1,<2",
     "pytest-cov>=7.1.0",
     "ruff",
-    "starlette~=0.50.0",
+    "starlette~=1.0.1",
     "uvicorn~=0.38.0",
 ]
 
