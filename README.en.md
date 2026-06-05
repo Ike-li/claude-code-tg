@@ -11,15 +11,16 @@ English | [中文](README.md)
 
 Send command on Telegram → tgcc calls Claude Code CLI locally → Results delivered to Telegram
 
-![tgcc Telegram smoke demo](docs/assets/tgcc-demo.svg)
+![tgcc Telegram smoke demo](https://raw.githubusercontent.com/Ike-li/claude-code-tg/main/docs/assets/tgcc-demo.svg)
 
 ---
 
 ## ⚡ Quick Start
 
 ```bash
-# Install
-uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
+# Install (PyPI)
+uv tool install claude-code-tg
+# Or the latest dev build: uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 
 # Configure (quick wizard: 3 essentials only; use tgcc init --full for every option)
 tgcc init
@@ -156,11 +157,11 @@ Full documentation index: [Documentation Index](docs/index.md)
 
 ## 🚧 Current Status
 
-This is `0.8.2` Alpha (tagged `v0.8.2`):
+This is `0.8.3` Alpha (tagged `v0.8.3`):
 
 ✅ **Implemented**: Text conversations, file input, multi-instance management, session resume, permission modes, queues, log redaction, CI
 
-⏳ **Not Yet**: PyPI publishing (install via git for now)
+✅ **On PyPI**: `uv tool install claude-code-tg`
 
 Run full local validation:
 ```bash

@@ -83,7 +83,7 @@ wheels = [
 
 [[package]]
 name = "claude-code-tg"
-version = "0.8.2"
+version = "0.8.3"
 source = { editable = "." }
 dependencies = [
     { name = "python-dotenv" },

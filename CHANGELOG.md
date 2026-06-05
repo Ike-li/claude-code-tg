@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog style, and this project uses semantic
 versioning once tagged releases begin.
 
+## 0.8.3 - 2026-06-05
+
+### Added
+
+- Published to PyPI: `uv tool install claude-code-tg` (or `pip install
+  claude-code-tg`). Git installs remain available for the latest dev build.
+- GitHub Actions release workflow that builds and publishes to PyPI via Trusted
+  Publishing (OIDC) on `v*` tag pushes, with a tag/version consistency check.
+
+### Changed
+
+- README install instructions now lead with the PyPI package; demo image uses an
+  absolute URL so it renders outside the GitHub repo.
+
 ## 0.8.2 - 2026-06-05
 
 ### Security

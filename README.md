@@ -11,15 +11,16 @@
 
 在 Telegram 发送指令 → tgcc 在本地调用 Claude Code CLI → 结果发回 Telegram
 
-![tgcc Telegram smoke demo](docs/assets/tgcc-demo.svg)
+![tgcc Telegram smoke demo](https://raw.githubusercontent.com/Ike-li/claude-code-tg/main/docs/assets/tgcc-demo.svg)
 
 ---
 
 ## ⚡ 3 步开始
 
 ```bash
-# 1. 安装
-uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
+# 1. 安装（PyPI）
+uv tool install claude-code-tg
+# 或装最新开发版：uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 
 # 2. 配置（快速向导，只问 3 个必填项；用 tgcc init --full 可配置全部选项）
 tgcc init
@@ -156,11 +157,11 @@ tgcc logs --env prod.env -f
 
 ## 🚧 当前状态
 
-这是 `0.8.2` Alpha 版本（已打 tag `v0.8.2`）：
+这是 `0.8.3` Alpha 版本（已打 tag `v0.8.3`）：
 
 ✅ **已实现**：文本对话、文件输入、多实例管理、会话恢复、权限模式、队列、日志脱敏、CI
 
-⏳ **尚未**：发布到 PyPI（目前通过 git 安装）
+✅ **已发布到 PyPI**：`uv tool install claude-code-tg`
 
 运行完整本地校验：
 ```bash

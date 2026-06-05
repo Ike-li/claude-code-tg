@@ -12,9 +12,10 @@ uv tool install "git+https://github.com/Ike-li/claude-code-tg.git"
 tgcc --version
 ```
 
-PyPI is not published as of `0.8.2`; the latest tagged release is `v0.8.2`. Use
-the Git URL for public installs or a local editable install while developing;
-for long-running instances, record `tgcc --version` and the installed commit.
+`tgcc` is published on PyPI as of `0.8.3` (`uv tool install claude-code-tg`);
+the latest tagged release is `v0.8.3`. The Git URL still works for the latest
+dev build or a local editable install; for long-running instances, record
+`tgcc --version` and the installed commit.
 
 For local development:
 
