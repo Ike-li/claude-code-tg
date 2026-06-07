@@ -123,3 +123,41 @@ class TestSanitize:
         result = sanitize(f"https://api.telegram.org/bot{token}/getUpdates")
         assert token not in result
         assert "***" in result
+
+    def test_strips_ansi_escape_sequences(self):
+        text = "\x1b[31mred\x1b[0m text"
+        result = sanitize(text)
+        assert "\x1b" not in result
+        assert result == "red text"
+
+    def test_strips_osc_hyperlink_injection(self):
+        text = "see \x1b]8;;http://evil.example\x07click\x1b]8;;\x07 here"
+        result = sanitize(text)
+        assert "\x1b" not in result
+        assert "evil.example" not in result or "]8;;" not in result
+
+    def test_strips_stray_control_chars_but_keeps_newline_tab(self):
+        text = "line1\nline2\tend\x00\x07"
+        result = sanitize(text)
+        assert "\n" in result
+        assert "\t" in result
+        assert "\x00" not in result
+        assert "\x07" not in result
+
+    def test_redacts_url_credentials(self):
+        text = "postgres://admin:s3cretP@ss@db.example:5432/app"
+        result = sanitize(text)
+        assert "s3cretP" not in result
+        assert "***" in result
+
+    def test_redacts_basic_auth_header(self):
+        text = "Authorization: Basic QWxhZGRpbjpvcGVuc2VzYW1l"
+        result = sanitize(text)
+        assert "QWxhZGRpbjpvcGVuc2VzYW1l" not in result
+        assert "***" in result
+
+    def test_redacts_lowercase_password_assignment(self):
+        text = "DB_PASSWORD=hunter2longenough"
+        result = sanitize(text)
+        assert "hunter2longenough" not in result
+        assert "***" in result

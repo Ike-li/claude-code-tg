@@ -134,6 +134,7 @@ After completion, shows results with copy and re-run buttons.
 
 ✅ **Best Practices:**
 - Only add trusted users to `ALLOWED_USER_IDS`
+- Group chats are default-deny; only add a group to `ALLOWED_CHAT_IDS` when every member is trusted to see bot output
 - Keep `.env` files at `chmod 600` (init does this automatically)
 - Regularly check logs to ensure redaction works
 - Never commit real tokens to git

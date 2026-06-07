@@ -212,6 +212,19 @@ class TestExecutorStreamHelpers:
         assert await _drain_stderr(None) == ""
 
     @pytest.mark.asyncio
+    async def test_drain_stderr_truncates_unbounded_output(self):
+        from claude_code_tg.executor import STDERR_RETAIN_CHARS
+
+        line = b"x" * 1000 + b"\n"
+        count = (STDERR_RETAIN_CHARS // 1001) + 50
+        stream = FakeStreamReader(line * count)
+
+        result = await _drain_stderr(stream)
+
+        assert len(result) <= STDERR_RETAIN_CHARS + len("\n...(stderr truncated)")
+        assert result.endswith("...(stderr truncated)")
+
+    @pytest.mark.asyncio
     async def test_await_stderr_swallows_cancelled_error(self):
         async def cancelled():
             raise asyncio.CancelledError
@@ -262,6 +275,50 @@ class TestExecutorRun:
         assert result.session_id == "test-session-id"
         assert result.is_error is False
         assert result.duration_ms == 1234
+
+    @pytest.mark.asyncio
+    async def test_oversized_stdout_line_is_skipped_not_fatal(
+        self, executor, monkeypatch
+    ):
+        result_event = {
+            "type": "result",
+            "result": "recovered",
+            "is_error": False,
+            "session_id": "test-session-id",
+        }
+
+        class OversizedThenResultStdout:
+            def __init__(self):
+                self._steps = [
+                    "overrun",
+                    json.dumps(result_event).encode() + b"\n",
+                    b"",
+                ]
+                self._discarded = False
+
+            async def readline(self):
+                step = self._steps.pop(0)
+                if step == "overrun":
+                    raise asyncio.LimitOverrunError("line too long", 10)
+                return step
+
+            async def readuntil(self, _sep=b"\n"):
+                self._discarded = True
+                return b"x" * 10
+
+        stdout = OversizedThenResultStdout()
+
+        async def fake_exec(*args, **kwargs):
+            proc = FakeProcess(stdout_data=b"", returncode=0)
+            proc.stdout = stdout
+            return proc
+
+        monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+
+        result = await executor.run(prompt="hi", chat_id=1, project_dir="/tmp")
+
+        assert result.text == "recovered"
+        assert stdout._discarded is True
 
     @pytest.mark.asyncio
     async def test_cli_resume_compat_rewrites_result_session(
@@ -1324,6 +1381,66 @@ class TestExecutorStop:
         ex._signal_process_tree(proc, signal.SIGTERM)
 
         assert proc.terminated is False
+
+    @pytest.mark.asyncio
+    async def test_shutdown_terminates_all_live_processes(self):
+        ex = Executor()
+        running_a = FakeProcess(returncode=None)
+        running_b = FakeProcess(returncode=None)
+        finished = FakeProcess(returncode=0)
+        ex._processes[1] = running_a
+        ex._processes[2] = running_b
+        ex._processes[3] = finished
+
+        await ex.shutdown()
+
+        assert running_a.terminated is True
+        assert running_b.terminated is True
+        assert finished.terminated is False
+
+    @pytest.mark.asyncio
+    async def test_run_cancellation_terminates_subprocess(self, monkeypatch):
+        ex = Executor()
+        proc = FakeProcess(returncode=None)
+
+        async def fake_exec(*args, **kwargs):
+            return proc
+
+        async def cancel_during_wait(awaitable, *_args, **_kwargs):
+            if hasattr(awaitable, "close"):
+                awaitable.close()
+            raise asyncio.CancelledError
+
+        monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+        monkeypatch.setattr(asyncio, "wait_for", cancel_during_wait)
+
+        with pytest.raises(asyncio.CancelledError):
+            await ex.run(prompt="test", chat_id=7, project_dir="/tmp")
+
+        assert proc.terminated is True
+
+    @pytest.mark.asyncio
+    async def test_run_finally_does_not_evict_replacement_process(self, monkeypatch):
+        ex = Executor()
+        original = FakeProcess(stdout_data=b"", returncode=0)
+        replacement = FakeProcess(returncode=None)
+
+        async def fake_exec(*args, **kwargs):
+            return original
+
+        async def swap_then_eof(awaitable, *_args, **_kwargs):
+            if hasattr(awaitable, "close"):
+                awaitable.close()
+            # A queued follow-up run replaced the entry mid-flight.
+            ex._processes[9] = replacement
+            return b""
+
+        monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+        monkeypatch.setattr(asyncio, "wait_for", swap_then_eof)
+
+        await ex.run(prompt="test", chat_id=9, project_dir="/tmp")
+
+        assert ex._processes.get(9) is replacement
 
 
 # --- Test helpers ---

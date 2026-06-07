@@ -50,6 +50,7 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         admin_ids: set[int],
         allowed_ids: set[int],
         project_dir: str,
+        allowed_chat_ids: set[int] | None = None,
         timeout: int = 300,
         queue_max_size: int = 3,
         permission_mode: str | None = None,
@@ -72,6 +73,7 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         self.token = token
         self.admin_ids = admin_ids
         self.allowed_ids = allowed_ids | admin_ids
+        self.allowed_chat_ids = allowed_chat_ids or set()
         self.project_dir = project_dir
         self.timeout = timeout
         default_attachment_dir = (
@@ -189,6 +191,18 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
 
     def _is_authorized(self, user_id: int) -> bool:
         return user_id in self.allowed_ids
+
+    def _is_chat_allowed(self, chat_id: int, chat_type: str | None) -> bool:
+        """Whether the bot may operate in this chat.
+
+        Private chats are governed solely by per-user authorization (the chat
+        belongs to the user). Group/supergroup/channel chats are default-deny:
+        the chat id must be explicitly listed in ``allowed_chat_ids``, because
+        bot output is visible to every member, not just the authorized sender.
+        """
+        if chat_type == "private":
+            return True
+        return chat_id in self.allowed_chat_ids
 
     def _write_status(self) -> None:
         """Write current bot status to JSON file for `tgcc status` consumption."""
@@ -329,6 +343,9 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         chat_id = chat.id
 
         if not self._is_authorized(user_id):
+            return
+
+        if not self._is_chat_allowed(chat_id, chat.type):
             return
 
         # Group chat: only respond to @bot or reply-to-bot

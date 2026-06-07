@@ -2,6 +2,7 @@
 
 import json
 import time
+import uuid
 from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -204,7 +205,13 @@ class ChatSessionStore:
             for chat_id_str, session_id in saved.items():
                 if not isinstance(session_id, str):
                     continue
-                self.sessions[int(chat_id_str)] = session_id
+                try:
+                    canonical = str(uuid.UUID(session_id.strip()))
+                except (AttributeError, ValueError):
+                    # status.json is local, but a tampered/corrupt entry must
+                    # never reach the claude --resume argv unvalidated.
+                    continue
+                self.sessions[int(chat_id_str)] = canonical
             saved_modes = data.get("permission_modes_full", {})
             if isinstance(saved_modes, dict):
                 for chat_id_str, mode in saved_modes.items():

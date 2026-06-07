@@ -73,9 +73,10 @@ def _check_env_permissions(env_file: Path) -> Diagnostic:
     except OSError as exc:
         return _warn("Env permissions", f"could not inspect mode: {exc}")
     if mode & 0o077:
-        return _warn(
+        return _fail(
             "Env permissions",
-            f"mode is {mode:o}; run `chmod 600 {env_file}` before sharing logs",
+            f"mode is {mode:o}; the bot token is group/world-readable. "
+            f"run `chmod 600 {env_file}`",
         )
     return _ok("Env permissions", f"mode is {mode:o}")
 

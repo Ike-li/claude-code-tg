@@ -212,7 +212,8 @@ class TestPersistence:
     def test_write_then_restore_round_trips_state(self, tmp_path: Path) -> None:
         status_file = tmp_path / "status.json"
         store = make_store(status_file=status_file)
-        store.sessions[5] = "sess-a"
+        session_id = "123e4567-e89b-12d3-a456-426614174000"
+        store.sessions[5] = session_id
         store.permission_modes[5] = "plan"
         store.model_overrides[5] = "opus"
         store.effort_overrides[5] = "high"
@@ -220,7 +221,7 @@ class TestPersistence:
 
         restored = make_store(status_file=status_file)
         assert restored.restore_sessions() == 1
-        assert restored.sessions[5] == "sess-a"
+        assert restored.sessions[5] == session_id
         assert restored.permission_modes[5] == "plan"
         assert restored.model_overrides[5] == "opus"
         assert restored.effort_overrides[5] == "high"
@@ -287,10 +288,11 @@ class TestPersistence:
         self, tmp_path: Path
     ) -> None:
         status_file = tmp_path / "status.json"
+        valid_session = "123e4567-e89b-12d3-a456-426614174000"
         status_file.write_text(
             json.dumps(
                 {
-                    "sessions_full": {"5": "sess-a", "6": 123},
+                    "sessions_full": {"5": valid_session, "6": 123, "7": "not-a-uuid"},
                     "permission_modes_full": {"5": "bogus-mode", "6": "plan"},
                     "model_overrides_full": {"5": "opus", "6": None},
                     "effort_overrides_full": {"5": "extreme", "6": "ultracode"},
@@ -299,8 +301,8 @@ class TestPersistence:
         )
         store = make_store(status_file=status_file)
         store.restore_sessions()
-        # Non-string session id for chat 6 is skipped.
-        assert store.sessions == {5: "sess-a"}
+        # Non-string id (chat 6) and non-UUID id (chat 7) are skipped.
+        assert store.sessions == {5: valid_session}
         # Invalid permission mode for chat 5 is skipped; valid one kept.
         assert store.permission_modes == {6: "plan"}
         # Valid model kept; None skipped.

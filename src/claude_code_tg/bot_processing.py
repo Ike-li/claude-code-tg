@@ -25,6 +25,7 @@ from claude_code_tg.run_view import (
     apply_run_event,
     render_run_view,
 )
+from claude_code_tg.sanitizer import sanitize
 from claude_code_tg.sessions import CLI_DEFAULT_LABEL, ChatSessionStore
 from claude_code_tg.telegram_ui import HTML_PARSE_MODE
 
@@ -157,7 +158,9 @@ class BotMessageProcessor:
             prompt=prompt,
             session_id=session_id or "",
             is_existing_session=is_existing,
-            git_branch=project_branch_label(self.project_dir),
+            git_branch=await asyncio.to_thread(
+                project_branch_label, self.project_dir
+            ),
             permission_mode=permission_mode_label,
             model=model or CLI_DEFAULT_LABEL,
             effort=effort_label,
@@ -300,7 +303,7 @@ class BotMessageProcessor:
 
         except Exception as e:
             logger.exception("Error processing message")
-            err_text = f"❌ 执行出错: {type(e).__name__}: {e}"
+            err_text = sanitize(f"❌ 执行出错: {type(e).__name__}: {e}")
             run_view.status = "failed"
             run_view.current_text = err_text
             run_view.finished_at = run_view.finished_at or time.monotonic()

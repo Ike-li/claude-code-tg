@@ -134,6 +134,7 @@ tgcc logs --env prod.env -f
 
 ✅ **推荐做法：**
 - 只把白名单用户加入 `ALLOWED_USER_IDS`
+- 群聊默认拒绝；仅当群内所有成员可信时，才把群 ID 加入 `ALLOWED_CHAT_IDS`
 - `.env` 文件设置为 `chmod 600`（init 会自动做）
 - 定期检查日志，确保脱敏正常工作
 - 不要把真实 token 提交到 git

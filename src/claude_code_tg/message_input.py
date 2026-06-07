@@ -16,17 +16,22 @@ from claude_code_tg.attachments import (
     unique_attachment_path,
 )
 from claude_code_tg.file_security import write_owner_only_bytes
+from claude_code_tg.sanitizer import strip_control_sequences
 
 
 def format_attachment_prompt(prompt: str, attachment: AttachmentInfo) -> str:
     user_text = prompt.strip() or DEFAULT_ATTACHMENT_PROMPT
     size_text = f"\n- size: {attachment.size} bytes" if attachment.size else ""
+    # original_name is attacker-controlled (any Telegram client). Strip control
+    # sequences and keep it on a single line so it can't forge extra metadata
+    # fields or inject terminal escapes into the prompt context.
+    safe_name = strip_control_sequences(attachment.original_name).replace("\n", " ")
     return (
         f"{user_text}\n\n"
         "Telegram 附件已准备好，请在需要时读取这个本地文件：\n"
         f"- type: {attachment.kind}\n"
         f"- attachment_mode: {attachment.mode}\n"
-        f"- original_name: {attachment.original_name}{size_text}\n"
+        f"- original_name: {safe_name}{size_text}\n"
         f"- local_path: {attachment.path}"
     )
 

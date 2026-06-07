@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from claude_code_tg.config import ConfigError, load_runtime_config, parse_ids
+from claude_code_tg.config import (
+    ConfigError,
+    load_runtime_config,
+    parse_chat_ids,
+    parse_ids,
+)
 
 
 @pytest.mark.parametrize(
@@ -34,6 +39,27 @@ def test_parse_ids_reports_non_numeric_values() -> None:
 def test_parse_ids_reports_non_positive_values(value: str) -> None:
     with pytest.raises(ValueError):
         parse_ids(value)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("", set()),
+        ("   ", set()),
+        ("-1001234567890", {-1001234567890}),
+        ("-100123, 456 ", {-100123, 456}),
+    ],
+)
+def test_parse_chat_ids_allows_negative_group_ids(
+    value: str, expected: set[int]
+) -> None:
+    assert parse_chat_ids(value) == expected
+
+
+@pytest.mark.parametrize("value", ["0", "-100,0", "abc"])
+def test_parse_chat_ids_rejects_zero_and_non_numeric(value: str) -> None:
+    with pytest.raises(ValueError):
+        parse_chat_ids(value)
 
 
 def _valid_environment(project: Path) -> dict[str, str]:
@@ -70,6 +96,7 @@ def test_load_runtime_config_parses_valid_environment(tmp_path: Path) -> None:
     assert config.token == "123:abc"
     assert config.admin_ids == {111, 222}
     assert config.allowed_ids == {333}
+    assert config.allowed_chat_ids == set()
     assert config.project_dir == str(project.resolve())
     assert config.timeout == 42
     assert config.queue_max_size == 1
@@ -161,6 +188,30 @@ def test_load_runtime_config_reports_invalid_allowed_ids(tmp_path: Path) -> None
     ):
         load_runtime_config(
             _valid_environment(project) | {"ALLOWED_USER_IDS": "333,nope,0"}
+        )
+
+
+def test_load_runtime_config_parses_allowed_chat_ids(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+
+    config = load_runtime_config(
+        _valid_environment(project) | {"ALLOWED_CHAT_IDS": "-1001234567890, 42"}
+    )
+
+    assert config.allowed_chat_ids == {-1001234567890, 42}
+
+
+def test_load_runtime_config_reports_invalid_allowed_chat_ids(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+
+    with pytest.raises(
+        ConfigError,
+        match="ALLOWED_CHAT_IDS contains zero or non-numeric",
+    ):
+        load_runtime_config(
+            _valid_environment(project) | {"ALLOWED_CHAT_IDS": "-100,0"}
         )
 
 

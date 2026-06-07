@@ -245,7 +245,7 @@ class TestHandleMessage:
 
     @pytest.mark.asyncio
     async def test_removes_bot_mention(self):
-        bot = make_bot()
+        bot = make_bot(allowed_chat_ids={222})
         update = make_update(text="@testbot hello", chat_type="group")
         update.message.reply_to_message = None
         context = make_context(bot_username="testbot")
@@ -264,7 +264,7 @@ class TestHandleMessage:
 
     @pytest.mark.asyncio
     async def test_group_ignores_non_mention(self):
-        bot = make_bot()
+        bot = make_bot(allowed_chat_ids={222})
         update = make_update(text="random message", chat_type="group")
         update.message.reply_to_message = None
         context = make_context()
@@ -273,8 +273,27 @@ class TestHandleMessage:
             mock_run.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_group_not_in_allowlist_is_denied(self):
+        # Default-deny: an @mention from an authorized user in a non-allowlisted
+        # group must not run, so output never leaks to group members.
+        bot = make_bot()  # no allowed_chat_ids
+        update = make_update(text="@testbot hello", chat_type="group")
+        update.message.reply_to_message = None
+        context = make_context(bot_username="testbot")
+        with patch.object(bot.executor, "run", new_callable=AsyncMock) as mock_run:
+            await bot.handle_message(update, context)
+            mock_run.assert_not_called()
+
+    def test_is_chat_allowed_policy(self):
+        bot = make_bot(allowed_chat_ids={-100123})
+        assert bot._is_chat_allowed(555, "private") is True
+        assert bot._is_chat_allowed(-100123, "supergroup") is True
+        assert bot._is_chat_allowed(-100999, "supergroup") is False
+        assert bot._is_chat_allowed(-100999, "group") is False
+
+    @pytest.mark.asyncio
     async def test_group_responds_to_reply(self):
-        bot = make_bot()
+        bot = make_bot(allowed_chat_ids={222})
         update = make_update(text="do something", chat_type="group")
         reply_user = MagicMock()
         reply_user.id = 999  # bot id
@@ -2559,16 +2578,16 @@ class TestHeartbeat:
 class TestRestoreSessions:
     def test_restore_sessions_from_file(self, tmp_path):
         bot = make_bot()
+        session_a = "123e4567-e89b-12d3-a456-426614174000"
+        session_b = "223e4567-e89b-12d3-a456-426614174000"
         status_file = tmp_path / "status.json"
         status_file.write_text(
-            json.dumps(
-                {"sessions_full": {"222": "abc12345-xxxx", "333": "def67890-yyyy"}}
-            )
+            json.dumps({"sessions_full": {"222": session_a, "333": session_b}})
         )
         bot.status_file = status_file
         bot._restore_sessions()
-        assert bot.sessions[222] == "abc12345-xxxx"
-        assert bot.sessions[333] == "def67890-yyyy"
+        assert bot.sessions[222] == session_a
+        assert bot.sessions[333] == session_b
 
     def test_restore_sessions_missing_file(self):
         bot = make_bot()
@@ -2634,13 +2653,14 @@ class TestRestoreSessions:
 
     def test_restore_sessions_skips_non_string_session_ids(self, tmp_path):
         bot = make_bot()
+        session_a = "123e4567-e89b-12d3-a456-426614174000"
         status_file = tmp_path / "status.json"
         status_file.write_text(
-            json.dumps({"sessions_full": {"222": "abc12345-xxxx", "333": 123}})
+            json.dumps({"sessions_full": {"222": session_a, "333": 123}})
         )
         bot.status_file = status_file
         bot._restore_sessions()
-        assert bot.sessions == {222: "abc12345-xxxx"}
+        assert bot.sessions == {222: session_a}
 
     def test_restore_permission_modes_from_file(self, tmp_path):
         bot = make_bot()

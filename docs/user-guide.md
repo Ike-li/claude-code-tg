@@ -69,6 +69,7 @@ Common optional settings:
 
 ```env
 ALLOWED_USER_IDS=
+ALLOWED_CHAT_IDS=
 CLAUDE_TIMEOUT=300
 QUEUE_MAX_SIZE=3
 CLAUDE_PERMISSION_MODE=bypassPermissions
@@ -165,12 +166,20 @@ When no local sessions are found, tgcc shows the manual `/resume <session_id>`
 form without switching the Telegram input box into reply mode. `/attach` and
 `/sessions` remain available as compatibility aliases.
 
-In group chats, use slash commands addressed to the bot, mention the bot, or
-reply to a bot message. Group chats share one chat-level Claude session and
-queue. Telegram BotFather privacy mode affects which group messages are
-delivered to bots: `/run@your_bot ...` style commands work with privacy enabled,
-but natural non-command `@your_bot` mentions may require disabling privacy for
-that dedicated bot.
+Group chats are **default-deny**: the bot ignores every group unless that
+group's chat id is listed in `ALLOWED_CHAT_IDS` (comma-separated; group ids are
+negative). This is because bot output is visible to *all* members of a group,
+not just the authorized sender — only allowlist a group when you trust everyone
+in it. With no `ALLOWED_CHAT_IDS` set, the bot responds in private chats only.
+To find a group's id, add the bot, send a message, and check `tgcc logs` or any
+`@userinfobot`-style helper.
+
+In an allowlisted group chat, use slash commands addressed to the bot, mention
+the bot, or reply to a bot message. Group chats share one chat-level Claude
+session and queue. Telegram BotFather privacy mode affects which group messages
+are delivered to bots: `/run@your_bot ...` style commands work with privacy
+enabled, but natural non-command `@your_bot` mentions may require disabling
+privacy for that dedicated bot.
 
 During a run, tgcc keeps one editable status card in the chat and sends
 best-effort Telegram `typing...` actions while Claude is working. The card

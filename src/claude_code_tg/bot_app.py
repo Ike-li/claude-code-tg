@@ -9,11 +9,13 @@ from typing import Protocol
 from telegram import BotCommand, MenuButtonWebApp, Update, WebAppInfo
 from telegram.ext import (
     Application,
+    ApplicationHandlerStop,
     CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     JobQueue,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
@@ -25,6 +27,7 @@ from claude_code_tg.command_menu import (
     build_claude_menu,
     load_or_probe_slash_commands,
 )
+from claude_code_tg.executor import Executor
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +44,12 @@ assert len(BOT_CONTROL_COMMANDS) <= MAX_TELEGRAM_MENU_COMMANDS
 
 class TelegramBotRuntime(Protocol):
     token: str
+    executor: Executor
     attachment_retention_days: float | None
     command_menu_cache_file: Path | None
     command_menu_enabled: bool
+
+    def _is_chat_allowed(self, chat_id: int, chat_type: str | None) -> bool: ...
     mini_app_enabled: bool
     mini_app_public_url: str
     mini_app_menu_text: str
@@ -194,6 +200,7 @@ def build_telegram_app(bot: TelegramBotRuntime) -> Application:
 
     async def post_shutdown(_application: Application) -> None:
         await bot.stop_mini_app()
+        await bot.executor.shutdown()
 
     app: Application = (
         Application.builder()
@@ -212,6 +219,17 @@ def build_telegram_app(bot: TelegramBotRuntime) -> Application:
         .build()
     )
 
+    async def chat_gate(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+        chat = update.effective_chat
+        if chat is None:
+            return
+        if not bot._is_chat_allowed(chat.id, chat.type):
+            # Default-deny for non-allowlisted group/channel chats: stop the
+            # update before any command or message handler can run, so bot
+            # output never leaks to unauthorized members.
+            raise ApplicationHandlerStop
+
+    app.add_handler(TypeHandler(Update, chat_gate), group=-2)
     app.add_handler(
         MessageHandler(filters.TEXT & filters.REPLY, bot.handle_forced_reply),
         group=-1,

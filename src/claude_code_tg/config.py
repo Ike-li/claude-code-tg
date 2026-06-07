@@ -33,6 +33,7 @@ class RuntimeConfig:
     token: str
     admin_ids: set[int]
     allowed_ids: set[int]
+    allowed_chat_ids: set[int]
     project_dir: str
     timeout: int
     queue_max_size: int
@@ -64,6 +65,26 @@ def parse_ids(value: str) -> set[int]:
         parsed = int(stripped)
         if parsed <= 0:
             raise ValueError(f"id must be positive: {stripped}")
+        ids.add(parsed)
+    return ids
+
+
+def parse_chat_ids(value: str) -> set[int]:
+    """Parse a comma-separated chat-id allow-list.
+
+    Group/supergroup chat ids are negative, so (unlike user ids) any non-zero
+    integer is accepted here.
+    """
+    if not value.strip():
+        return set()
+    ids: set[int] = set()
+    for item in value.split(","):
+        stripped = item.strip()
+        if not stripped:
+            continue
+        parsed = int(stripped)
+        if parsed == 0:
+            raise ValueError(f"chat id must be non-zero: {stripped}")
         ids.add(parsed)
     return ids
 
@@ -123,6 +144,13 @@ def load_runtime_config(
     except ValueError as exc:
         raise ConfigError(
             "ALLOWED_USER_IDS contains non-positive or non-numeric values"
+        ) from exc
+
+    try:
+        allowed_chat_ids = parse_chat_ids(values.get("ALLOWED_CHAT_IDS", ""))
+    except ValueError as exc:
+        raise ConfigError(
+            "ALLOWED_CHAT_IDS contains zero or non-numeric values"
         ) from exc
 
     project_dir = os.path.abspath(values.get("CLAUDE_PROJECT_DIR", "."))
@@ -214,6 +242,7 @@ def load_runtime_config(
         token=token,
         admin_ids=admin_ids,
         allowed_ids=allowed_ids,
+        allowed_chat_ids=allowed_chat_ids,
         project_dir=project_dir,
         timeout=timeout,
         queue_max_size=queue_max_size,

@@ -14,6 +14,10 @@ Main boundaries:
 
 - Telegram users are untrusted until listed in `ADMIN_USER_IDS` or
   `ALLOWED_USER_IDS`.
+- Telegram group chats are default-deny: the bot operates in a group only if its
+  chat id is listed in `ALLOWED_CHAT_IDS`. Bot output is visible to every member
+  of an allowlisted group, so a group should be trusted as a whole — an
+  authorized sender's command results are exposed to all members.
 - Telegram groups share one chat-level Claude session and queue. Authorized
   participants can affect the shared conversation.
 - Telegram Bot API, Telegram clients, and temporary Mini App tunnels are

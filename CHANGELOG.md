@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog style, and this project uses semantic
 versioning once tagged releases begin.
 
+## Unreleased
+
+### Security
+
+- Group chats are now default-deny. The bot only operates in a group whose chat
+  id is listed in the new `ALLOWED_CHAT_IDS` setting; previously any authorized
+  user could trigger a run in any group, streaming `bypassPermissions` output to
+  all members. A global handler gate enforces this for messages, commands, and
+  callbacks alike.
+- Restored session ids from `status.json` are now UUID-validated before reaching
+  the `claude --resume` argv.
+- The output sanitizer strips ANSI/OSC terminal escape sequences and stray
+  control characters, and redacts URL credentials, HTTP Basic-auth headers, and
+  more credential-assignment formats. Exception text sent to Telegram and
+  attacker-controlled attachment filenames are now sanitized.
+- `tgcc doctor` now reports group/world-readable `.env` files (which hold the bot
+  token) as a failure rather than a warning.
+
+### Fixed
+
+- The executor no longer leaks subprocesses or the stderr-drain task when a run
+  is cancelled or the bot shuts down; a new shutdown hook reaps all live
+  processes. Process eviction is guarded by identity so a queued follow-up run is
+  not clobbered.
+- An oversized (>1MB) stream-json line from Claude is now skipped instead of
+  crashing the run.
+- The blocking `git` branch lookup runs off the event loop, and the stderr drain
+  buffer is bounded to avoid unbounded memory growth.
+
+### Changed
+
+- Loosened the optional `uvicorn` pin from `~=0.38.0` to `>=0.38,<1.0` so
+  security and bugfix minors are allowed.
+
 ## 0.8.3 - 2026-06-05
 
 ### Added

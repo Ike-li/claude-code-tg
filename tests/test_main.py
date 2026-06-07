@@ -384,6 +384,7 @@ class TestMainValidation:
             "token": "123:abc",
             "admin_ids": {111, 222},
             "allowed_ids": {333},
+            "allowed_chat_ids": set(),
             "project_dir": str(project_dir.resolve()),
             "timeout": 42,
             "queue_max_size": 1,

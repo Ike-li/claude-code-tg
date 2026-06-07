@@ -94,8 +94,8 @@ def test_cmd_doctor_exits_for_invalid_env(tmp_path, capsys):
     assert "FAIL ATTACHMENT_RETENTION_DAYS:" in output
 
 
-def test_cmd_doctor_warns_for_group_readable_env(monkeypatch, tmp_path, capsys):
-    """Doctor warns about broad env permissions without requiring Claude in CI."""
+def test_cmd_doctor_fails_for_group_readable_env(monkeypatch, tmp_path, capsys):
+    """Doctor fails on broad env permissions: the env file holds the bot token."""
     monkeypatch.setattr(
         "claude_code_tg.diagnostics.shutil.which", lambda _cmd: "/usr/bin/claude"
     )
@@ -120,10 +120,12 @@ def test_cmd_doctor_warns_for_group_readable_env(monkeypatch, tmp_path, capsys):
     args.format = "text"
     args.fix_permissions = False
     args.strict = False
-    cmd_doctor(args)
+    with pytest.raises(SystemExit) as exc:
+        cmd_doctor(args)
 
     output = capsys.readouterr().out
-    assert "WARN Env permissions:" in output
+    assert exc.value.code == 1
+    assert "FAIL Env permissions:" in output
     assert "Claude Code CLI" in output
 
 
@@ -141,12 +143,13 @@ def test_cmd_doctor_strict_exits_for_warning(monkeypatch, tmp_path, capsys):
                 "TELEGRAM_BOT_TOKEN=token",
                 "ADMIN_USER_IDS=111",
                 f"CLAUDE_PROJECT_DIR={project}",
+                "QUEUE_MAX_SIZE=0",
                 "",
             ]
         ),
         encoding="utf-8",
     )
-    env_file.chmod(0o644)
+    env_file.chmod(0o600)
 
     args = MagicMock()
     args.env = str(env_file)
@@ -155,7 +158,7 @@ def test_cmd_doctor_strict_exits_for_warning(monkeypatch, tmp_path, capsys):
         cmd_doctor(args)
 
     assert exc.value.code == 1
-    assert "WARN Env permissions:" in capsys.readouterr().out
+    assert "WARN QUEUE_MAX_SIZE:" in capsys.readouterr().out
 
 
 def test_cmd_doctor_json_output_hides_secrets(monkeypatch, tmp_path, capsys):

@@ -19,6 +19,8 @@ Recommended baseline:
   untrusted/shared project directories should use `default` or `plan`
 - `ATTACHMENT_MODE=reject` when file intake is not required
 - trusted Telegram users only in `ADMIN_USER_IDS` and `ALLOWED_USER_IDS`
+- group chats are default-deny; allowlist a group in `ALLOWED_CHAT_IDS` only when
+  every member is trusted to see bot output
 
 Use one dedicated BotFather token per instance, and revoke or rotate any token
 that may have been exposed.

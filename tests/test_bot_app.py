@@ -34,6 +34,11 @@ class FakeBotRuntime:
         self.mini_app_menu_text = "tgcc"
         self.start_mini_app = AsyncMock()
         self.stop_mini_app = AsyncMock()
+        self.executor = MagicMock()
+        self.executor.shutdown = AsyncMock()
+
+    def _is_chat_allowed(self, chat_id, chat_type) -> bool:
+        return True
 
     async def handle_start(self, update, context) -> None: ...
 
@@ -162,6 +167,41 @@ def test_build_telegram_app_registers_expected_handlers() -> None:
     assert any(
         type(handler).__name__ == "MessageHandler" for handler in app.handlers[-1]
     )
+
+
+@pytest.mark.asyncio
+async def test_chat_gate_stops_disallowed_chats() -> None:
+    from telegram.ext import ApplicationHandlerStop
+
+    bot = FakeBotRuntime()
+    bot._is_chat_allowed = lambda chat_id, chat_type: False  # type: ignore[assignment]
+    app = build_telegram_app(bot)
+
+    # The gate lives in the lowest handler group (-2), ahead of everything.
+    gate_group = min(app.handlers)
+    gate = app.handlers[gate_group][0]
+
+    update = MagicMock()
+    update.effective_chat.id = -100999
+    update.effective_chat.type = "supergroup"
+
+    with pytest.raises(ApplicationHandlerStop):
+        await gate.callback(update, MagicMock())
+
+
+@pytest.mark.asyncio
+async def test_chat_gate_allows_permitted_chats() -> None:
+    bot = FakeBotRuntime()  # _is_chat_allowed returns True
+    app = build_telegram_app(bot)
+    gate_group = min(app.handlers)
+    gate = app.handlers[gate_group][0]
+
+    update = MagicMock()
+    update.effective_chat.id = 222
+    update.effective_chat.type = "private"
+
+    # Should not raise.
+    await gate.callback(update, MagicMock())
 
 
 @pytest.mark.asyncio

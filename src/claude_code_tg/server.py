@@ -106,6 +106,7 @@ def main() -> None:
         token=config.token,
         admin_ids=config.admin_ids,
         allowed_ids=config.allowed_ids,
+        allowed_chat_ids=config.allowed_chat_ids,
         project_dir=config.project_dir,
         timeout=config.timeout,
         queue_max_size=config.queue_max_size,

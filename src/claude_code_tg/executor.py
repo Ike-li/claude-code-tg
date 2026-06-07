@@ -76,14 +76,33 @@ TOOL_RESULT_TAIL_LINES = 8
 TOOL_RESULT_TAIL_CHARS = 1200
 
 
+STDERR_RETAIN_CHARS = 64 * 1024
+
+
 async def _drain_stderr(stream: asyncio.StreamReader | None) -> str:
-    """Consume stderr to prevent pipe deadlock."""
+    """Consume stderr to prevent pipe deadlock, retaining a bounded prefix.
+
+    A long-lived or noisy subprocess can emit unbounded stderr; we keep only
+    the first ``STDERR_RETAIN_CHARS`` (the root error is usually there) while
+    still reading the stream to completion so the pipe never blocks.
+    """
     if not stream:
         return ""
     chunks: list[str] = []
+    total = 0
+    truncated = False
     async for line in stream:
-        chunks.append(line.decode(errors="replace"))
-    return "".join(chunks)
+        if truncated:
+            continue
+        text = line.decode(errors="replace")
+        chunks.append(text)
+        total += len(text)
+        if total >= STDERR_RETAIN_CHARS:
+            truncated = True
+    result = "".join(chunks)
+    if truncated:
+        result = result[:STDERR_RETAIN_CHARS] + "\n...(stderr truncated)"
+    return result
 
 
 async def _await_stderr(task: asyncio.Task) -> str:
@@ -92,6 +111,26 @@ async def _await_stderr(task: asyncio.Task) -> str:
         return await task
     except asyncio.CancelledError:
         return ""
+
+
+async def _discard_oversized_line(stream: asyncio.StreamReader) -> None:
+    """Consume and drop bytes up to the next newline after a LimitOverrunError.
+
+    On ``LimitOverrunError`` the offending data stays in the reader's buffer, so
+    a naive ``continue`` would loop forever. We drain chunk by chunk until the
+    newline is reached (or EOF), landing the reader exactly at the next line.
+    """
+    while True:
+        try:
+            await stream.readuntil(b"\n")
+            return
+        except asyncio.LimitOverrunError as exc:
+            try:
+                await stream.readexactly(exc.consumed)
+            except asyncio.IncompleteReadError:
+                return
+        except asyncio.IncompleteReadError:
+            return
 
 
 async def _write_prompt_stdin(stream: asyncio.StreamWriter | None, prompt: str) -> None:
@@ -537,6 +576,16 @@ class Executor:
                         )
                         continue
                     break
+                except (asyncio.LimitOverrunError, ValueError):
+                    # A single stream-json line exceeded the 1MB buffer (e.g. a
+                    # huge tool result). Drain and discard that line instead of
+                    # letting the exception crash the whole run.
+                    logger.warning(
+                        "Discarding oversized stdout line (>%d bytes)",
+                        1024 * 1024,
+                    )
+                    await _discard_oversized_line(process.stdout)
+                    continue
                 if not line:
                     break
 
@@ -701,8 +750,20 @@ class Executor:
                     result_data = event
 
             await process.wait()
+        except BaseException:
+            # Includes asyncio.CancelledError (handler torn down / bot
+            # shutting down): never leak the subprocess or the stderr drain
+            # task. Signal synchronously — awaiting during cancellation could
+            # re-raise before cleanup completes.
+            if process.returncode is None:
+                self._terminate_process_tree(process)
+            stderr_task.cancel()
+            raise
         finally:
-            self._processes.pop(chat_id, None)
+            # Guard by identity: a queued follow-up run for the same chat may
+            # have already replaced this entry; don't evict a newer process.
+            if self._processes.get(chat_id) is process:
+                self._processes.pop(chat_id, None)
 
         was_stopped = chat_id in self._stopped
         self._stopped.discard(chat_id)
@@ -806,6 +867,14 @@ class Executor:
         self._stopped.add(chat_id)
         await self._kill(process)
         return True
+
+    async def shutdown(self) -> None:
+        """Terminate every live subprocess. Called on application shutdown."""
+        processes = list(self._processes.values())
+        await asyncio.gather(
+            *(self._kill(process) for process in processes),
+            return_exceptions=True,
+        )
 
     async def _kill(self, process: asyncio.subprocess.Process) -> None:
         if process.returncode is not None:
