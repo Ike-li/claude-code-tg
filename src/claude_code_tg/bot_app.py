@@ -50,6 +50,7 @@ class TelegramBotRuntime(Protocol):
     command_menu_enabled: bool
 
     def _is_chat_allowed(self, chat_id: int, chat_type: str | None) -> bool: ...
+
     mini_app_enabled: bool
     mini_app_public_url: str
     mini_app_menu_text: str

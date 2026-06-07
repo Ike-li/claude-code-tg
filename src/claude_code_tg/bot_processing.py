@@ -158,9 +158,7 @@ class BotMessageProcessor:
             prompt=prompt,
             session_id=session_id or "",
             is_existing_session=is_existing,
-            git_branch=await asyncio.to_thread(
-                project_branch_label, self.project_dir
-            ),
+            git_branch=await asyncio.to_thread(project_branch_label, self.project_dir),
             permission_mode=permission_mode_label,
             model=model or CLI_DEFAULT_LABEL,
             effort=effort_label,
