@@ -83,7 +83,7 @@ wheels = [
 
 [[package]]
 name = "claude-code-tg"
-version = "0.8.3"
+version = "0.8.4"
 source = { editable = "." }
 dependencies = [
     { name = "python-dotenv" },
@@ -116,8 +116,8 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "starlette", marker = "extra == 'dev'", specifier = ">=1.0.1,<2.0.0" },
     { name = "starlette", marker = "extra == 'mini-app'", specifier = ">=1.0.1,<2.0.0" },
-    { name = "uvicorn", marker = "extra == 'dev'", specifier = "~=0.38.0" },
-    { name = "uvicorn", marker = "extra == 'mini-app'", specifier = "~=0.38.0" },
+    { name = "uvicorn", marker = "extra == 'dev'", specifier = ">=0.38,<1.0" },
+    { name = "uvicorn", marker = "extra == 'mini-app'", specifier = ">=0.38,<1.0" },
 ]
 provides-extras = ["mini-app", "dev"]
 

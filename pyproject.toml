@@ -1,6 +1,6 @@
 [project]
 name = "claude-code-tg"
-version = "0.8.3"
+version = "0.8.4"
 description = "Lightweight self-hosted Telegram manager for Claude Code CLI"
 readme = "README.md"
 license = "MIT"

@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog style, and this project uses semantic
 versioning once tagged releases begin.
 
-## Unreleased
+## 0.8.4 - 2026-06-07
 
 ### Security
 

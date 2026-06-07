@@ -12,7 +12,7 @@ uv tool install claude-code-tg
 tgcc --version
 ```
 
-`tgcc` is published on PyPI as of `0.8.3`; the latest tagged release is `v0.8.3`.
+`tgcc` is published on PyPI as of `0.8.3`; the latest tagged release is `v0.8.4`.
 The Git URL still works for the latest dev build:
 
 ```bash
