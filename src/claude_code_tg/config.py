@@ -262,3 +262,51 @@ def load_runtime_config(
         mini_app_menu_text=mini_app_menu_text,
         log_interactions=log_interactions,
     )
+
+
+class SimpleConfigProvider:
+    """简单的字典型配置提供者。
+
+    实现 ConfigProviderInterface 接口，提供基本的键值对存储。
+    用于依赖注入容器中的配置管理。
+    """
+
+    def __init__(self, config: dict[str, object] | None = None) -> None:
+        """初始化配置提供者。
+
+        Args:
+            config: 初始配置字典
+        """
+        self._config: dict[str, object] = config.copy() if config else {}
+
+    def get(self, key: str, default: object = None) -> object:
+        """获取配置值。
+
+        Args:
+            key: 配置键
+            default: 默认值
+
+        Returns:
+            object: 配置值或默认值
+        """
+        return self._config.get(key, default)
+
+    def set(self, key: str, value: object) -> None:
+        """设置配置值。
+
+        Args:
+            key: 配置键
+            value: 配置值
+        """
+        self._config[key] = value
+
+    def has(self, key: str) -> bool:
+        """检查配置键是否存在。
+
+        Args:
+            key: 配置键
+
+        Returns:
+            bool: 是否存在
+        """
+        return key in self._config
