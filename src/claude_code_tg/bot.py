@@ -34,6 +34,7 @@ from claude_code_tg.pending_reply import PendingReplyStore
 from claude_code_tg.result_view import ResultActionStore
 from claude_code_tg.resume_view import ResumePickerStore
 from claude_code_tg.run_view import RunViewStore
+from claude_code_tg.services import AttachmentService
 from claude_code_tg.sessions import ChatSessionStore, ReplyCallback
 from claude_code_tg.utils import _format_uptime
 
@@ -128,6 +129,13 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         self.attachment_max_bytes = self.input_builder.attachment_max_bytes
         self.attachment_mode = self.input_builder.attachment_mode
         self.attachment_retention_days = attachment_retention_days
+
+        # 附件服务
+        self.attachment_service = AttachmentService(
+            attachment_dir=self.attachment_dir,
+            project_dir=self.project_dir,
+            retention_days=attachment_retention_days,
+        )
 
         # 功能开关
         self.command_menu_enabled = command_menu_enabled
@@ -267,57 +275,12 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         )
 
     def _attachment_cleanup_roots(self) -> list[tuple[str, Path]]:
-        roots = [
-            ("instance", self.attachment_dir),
-            (
-                "project",
-                Path(self.project_dir).expanduser().resolve(strict=False)
-                / PROJECT_ATTACHMENT_DIRNAME,
-            ),
-        ]
-        seen: set[str] = set()
-        unique_roots: list[tuple[str, Path]] = []
-        for label, root in roots:
-            root_key = str(root.expanduser().resolve(strict=False))
-            if root_key in seen:
-                continue
-            seen.add(root_key)
-            unique_roots.append((label, root))
-        return unique_roots
+        """返回需要清理的根目录列表（委托给 AttachmentService）。"""
+        return self.attachment_service.cleanup_roots()
 
     def _run_attachment_retention_cleanup(self) -> tuple[int, int, int]:
-        """Prune old attachment files when automatic retention is configured."""
-        if self.attachment_retention_days is None:
-            return (0, 0, 0)
-
-        older_than_seconds = self.attachment_retention_days * 86400
-        total_files = 0
-        total_bytes = 0
-        total_errors = 0
-        for label, root in self._attachment_cleanup_roots():
-            result = prune_attachment_tree(
-                root,
-                older_than_seconds=older_than_seconds,
-                dry_run=False,
-            )
-            total_files += result.files
-            total_bytes += result.byte_count
-            total_errors += len(result.errors)
-            for error in result.errors:
-                logger.warning("Attachment cleanup warning | scope=%s %s", label, error)
-            if result.root_exists and (result.files or result.dirs_removed):
-                logger.info(
-                    "Attachment cleanup | scope=%s files=%d bytes=%d dirs=%d",
-                    label,
-                    result.files,
-                    result.byte_count,
-                    result.dirs_removed,
-                )
-        if total_errors:
-            logger.warning(
-                "Attachment cleanup completed with %d warning(s)", total_errors
-            )
-        return (total_files, total_bytes, total_errors)
+        """执行保留期清理（委托给 AttachmentService）。"""
+        return self.attachment_service.run_retention_cleanup()
 
     def _get_or_create_session(self, chat_id: int) -> tuple[str | None, bool]:
         """Returns (session_id, is_existing). None means new session."""
