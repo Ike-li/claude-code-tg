@@ -161,3 +161,84 @@ class TestSanitize:
         result = sanitize(text)
         assert "hunter2longenough" not in result
         assert "***" in result
+
+    def test_short_format_api_key(self):
+        """Test that shorter API keys (16+ chars total) are also redacted."""
+        token = "sk-abc1234567890123"  # 18 chars total (3 prefix + 15 body)
+        result = sanitize(f"token is {token}")
+        assert "***" in result
+        assert "sk-abc" not in result
+
+    def test_mixed_case_env_var_api_key(self):
+        """Test mixed-case environment variable names."""
+        text = "api_key=secret123value456"
+        result = sanitize(text)
+        assert "secret123value456" not in result
+        assert "api_key=" in result
+        assert "***" in result
+
+    def test_lowercase_env_var_secret(self):
+        """Test lowercase environment variable names."""
+        text = "database_password=my_secret_pass"
+        result = sanitize(text)
+        assert "my_secret_pass" not in result
+        assert "database_password=" in result
+        assert "***" in result
+
+    def test_camel_case_env_var_token(self):
+        """Test camelCase environment variable names."""
+        text = "apiToken=tokenValue123"
+        result = sanitize(text)
+        assert "tokenValue123" not in result
+        assert "apiToken=" in result
+        assert "***" in result
+
+    def test_aws_session_token_uppercase(self):
+        """Test AWS_SESSION_TOKEN redaction."""
+        text = "AWS_SESSION_TOKEN=FwoGZXIvYXdzEBQaDHlZ"
+        result = sanitize(text)
+        assert "FwoGZXIvYXdzEBQaDHlZ" not in result
+        assert "***" in result
+
+    def test_aws_session_token_lowercase(self):
+        """Test aws_session_token redaction (case-insensitive)."""
+        text = "aws_session_token=FwoGZXIvYXdzEBQaDHlZ"
+        result = sanitize(text)
+        assert "FwoGZXIvYXdzEBQaDHlZ" not in result
+        assert "***" in result
+
+    def test_oauth_access_token_colon(self):
+        """Test OAuth access_token with colon separator."""
+        text = "access_token:ya29.a0AfH6SMBxAbCdEfGhIj"  # 20+ chars
+        result = sanitize(text)
+        assert "ya29.a0AfH6SMBxAbCdEfGhIj" not in result
+        assert "access_token:***" in result
+
+    def test_oauth_refresh_token_equals(self):
+        """Test OAuth refresh_token with equals separator."""
+        text = "refresh_token=1//0gBhGZXTy9z8..."
+        result = sanitize(text)
+        assert "1//0gBhGZXTy9z8" not in result
+        assert "***" in result
+
+    def test_ssh_fingerprint_md5(self):
+        """Test SSH MD5 fingerprint redaction."""
+        text = "Fingerprint: 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48"
+        result = sanitize(text)
+        assert "16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48" not in result
+        assert "***" in result
+
+    def test_no_false_positive_innocuous_lowercase(self):
+        """Ensure we don't over-redact innocuous lowercase key=value pairs."""
+        # Short values should not be redacted
+        text = "key=val"
+        result = sanitize(text)
+        assert result == text  # Too short to match pattern
+
+    def test_preserves_uppercase_only_strict_pattern(self):
+        """Ensure uppercase-only pattern still works."""
+        text = "MY_SECRET_KEY=supersecret123"
+        result = sanitize(text)
+        assert "supersecret123" not in result
+        assert "MY_SECRET_KEY=" in result
+        assert "***" in result

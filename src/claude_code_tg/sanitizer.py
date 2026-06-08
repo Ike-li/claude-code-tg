@@ -5,7 +5,8 @@ import re
 _PATTERNS = [
     # API keys (sk-..., key-..., api-...). Modern keys often contain
     # additional separators, e.g. sk-ant-api03-... or sk-proj-...
-    (re.compile(r"\b(sk|key|api)[-_][A-Za-z0-9][A-Za-z0-9_-]{19,}\b"), "***"),
+    # Relaxed length requirement from 19+ to 15+ to cover short-format keys
+    (re.compile(r"\b(sk|key|api)[-_][A-Za-z0-9][A-Za-z0-9_-]{15,}\b"), "***"),
     # GitHub personal access tokens and other GitHub tokens
     (re.compile(r"\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b"), "***"),
     (re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"), "***"),
@@ -25,14 +26,37 @@ _PATTERNS = [
     ),
     # Bearer tokens
     (re.compile(r"Bearer\s+[A-Za-z0-9._\-]{20,}"), "Bearer ***"),
-    # Environment variable assignments with sensitive values. Names stay
-    # uppercase-only to avoid redacting innocuous lowercase like `key=value`.
+    # Environment variable assignments with sensitive values (case-insensitive)
+    # Uppercase-only pattern for strict matching
     (
         re.compile(
             r"([A-Z_]*(KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL)[A-Z_]*\s*=\s*)\S+"
         ),
         r"\1***",
     ),
+    # Mixed-case and lowercase environment variables with sensitive names
+    # Require at least 8 chars in value to avoid false positives like "key=val"
+    (
+        re.compile(
+            r"([A-Za-z_]*(key|secret|token|password|passwd|credential)[A-Za-z_]*\s*=\s*)\S{8,}",
+            re.IGNORECASE,
+        ),
+        r"\1***",
+    ),
+    # AWS session tokens
+    (
+        re.compile(
+            r"\b(aws_session_token|AWS_SESSION_TOKEN)\s*=\s*\S+", re.IGNORECASE
+        ),
+        "***",
+    ),
+    # OAuth access and refresh tokens - require at least 20 chars
+    (
+        re.compile(r"\b(access_token|refresh_token)[:=]\s*[A-Za-z0-9._\-]{20,}\b"),
+        r"\1:***",
+    ),
+    # SSH key fingerprints (MD5 format: xx:xx:xx:...)
+    (re.compile(r"\b[0-9a-f]{2}(:[0-9a-f]{2}){15,}\b"), "***"),
     # URL credentials, e.g. scheme://user:pass@host (postgres://, redis://, ...)
     (
         re.compile(r"\b([a-zA-Z][a-zA-Z0-9+.\-]*://[^\s:/@]+:)[^\s/@]+(@)"),
@@ -40,7 +64,7 @@ _PATTERNS = [
     ),
     # HTTP Basic auth header values
     (re.compile(r"(?i)(Basic\s+)[A-Za-z0-9+/=]{8,}"), r"\1***"),
-    # AWS keys
+    # AWS access keys (AKIA for regular, ASIA for temporary/STS)
     (re.compile(r"\b(AKIA|ASIA)[A-Z0-9]{16}\b"), "***"),
     # Telegram Bot tokens, including API and file URLs. File downloads may
     # URL-encode the ":" separator as "%3A".
