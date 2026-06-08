@@ -97,33 +97,41 @@ def main() -> None:
         logger.info("Interaction logging enabled (LOG_INTERACTIONS=true)")
 
     from claude_code_tg.bot import TGBot
+    from claude_code_tg.container import ServiceContainer
     from claude_code_tg.instance_store import instance_paths
 
     _, logfile = instance_paths(dotenv_path or ".env")
     status_file = logfile.parent / "status.json"
 
-    bot = TGBot(
-        token=config.token,
-        admin_ids=config.admin_ids,
-        allowed_ids=config.allowed_ids,
-        allowed_chat_ids=config.allowed_chat_ids,
+    # 使用依赖注入容器创建服务
+    container = ServiceContainer.create_default(
         project_dir=config.project_dir,
         timeout=config.timeout,
         queue_max_size=config.queue_max_size,
         permission_mode=config.permission_mode,
         model=config.model,
         effort=config.effort,
+        status_file=status_file,
+        cli_resume_compat=config.cli_resume_compat,
+        draft_preview_enabled=config.draft_preview_enabled,
+    )
+
+    # 使用容器创建 bot
+    bot = TGBot(
+        token=config.token,
+        admin_ids=config.admin_ids,
+        allowed_ids=config.allowed_ids,
+        container=container,
+        allowed_chat_ids=config.allowed_chat_ids,
         attachment_max_bytes=config.attachment_max_bytes,
         attachment_mode=config.attachment_mode,
         attachment_retention_days=config.attachment_retention_days,
         command_menu_enabled=config.command_menu_enabled,
-        draft_preview_enabled=config.draft_preview_enabled,
         mini_app_enabled=config.mini_app_enabled,
         mini_app_public_url=config.mini_app_public_url,
         mini_app_host=config.mini_app_host,
         mini_app_port=config.mini_app_port,
         mini_app_menu_text=config.mini_app_menu_text,
-        cli_resume_compat=config.cli_resume_compat,
         status_file=status_file,
     )
 
