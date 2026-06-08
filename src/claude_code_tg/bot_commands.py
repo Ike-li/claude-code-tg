@@ -165,6 +165,7 @@ class BotCommandHandlers:
     _effort_label: Callable[[int], str]
     _model_label: Callable[[int], str]
     _normalize_session_id: Callable[[str], str | None]
+    _normalize_and_validate_session_id: Callable[[str, int], str | None]
     _permission_mode_label: Callable[[int], str]
     _process_message: Callable[
         [int, int, str, ContextTypes.DEFAULT_TYPE],
@@ -249,6 +250,7 @@ class BotCommandHandlers:
 
         if context.args:
             if len(context.args) == 1 and self._normalize_session_id(context.args[0]):
+                # Use validated method that checks ownership
                 await self._attach_session_id(chat_id, message, context.args[0])
                 return
             await self._send_resume_history(
@@ -264,9 +266,12 @@ class BotCommandHandlers:
         message: Message,
         raw_session_id: str,
     ) -> None:
-        session_id = self._normalize_session_id(raw_session_id)
+        # Use validated method that checks ownership
+        session_id = self._normalize_and_validate_session_id(raw_session_id, chat_id)
         if not session_id:
-            await message.reply_text("无效的 session_id：请提供 Claude Code UUID。")
+            await message.reply_text(
+                "无效的 session_id 或该 session 属于其他 chat。请提供有效的 Claude Code UUID。"
+            )
             return
 
         await message.reply_text(await self._attach_session_text(chat_id, session_id))

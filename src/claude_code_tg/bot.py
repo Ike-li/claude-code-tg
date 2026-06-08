@@ -308,9 +308,22 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
     def _effort_label(self, chat_id: int) -> str:
         return self.state.effort_label(chat_id)
 
+    def _normalize_and_validate_session_id(
+        self, session_id: str, chat_id: int
+    ) -> str | None:
+        """Return a canonical Claude session UUID with ownership validation.
+
+        Returns None if the UUID is invalid or belongs to another chat.
+        """
+        return self.state.normalize_and_validate_session_id(session_id, chat_id)
+
     @staticmethod
     def _normalize_session_id(session_id: str) -> str | None:
-        """Return a canonical Claude session UUID, or None if invalid."""
+        """Return a canonical Claude session UUID, or None if invalid.
+
+        DEPRECATED: Use _normalize_and_validate_session_id for security.
+        This method only validates format, not ownership.
+        """
         try:
             return str(uuid.UUID(session_id.strip()))
         except (AttributeError, ValueError):
@@ -477,9 +490,11 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
             self._write_status()
             return {"ok": True, "stopped": stopped, "dropped": dropped}
         if action == "resume":
-            session_id = self._normalize_session_id(str(payload.get("session_id", "")))
+            session_id = self._normalize_and_validate_session_id(
+                str(payload.get("session_id", "")), chat_id
+            )
             if not session_id:
-                return {"ok": False, "error": "invalid_session_id"}
+                return {"ok": False, "error": "invalid_session_id_or_unauthorized"}
             message_text = await self._attach_session_text(chat_id, session_id)
             return {"ok": True, "message": message_text}
         if action == "set_model":

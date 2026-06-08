@@ -151,6 +151,9 @@ class ChatSessionStore:
         self.queues: dict[int, deque[QueuedPrompt]] = {}
         self.start_time: float = time.time()
         self.heartbeat_counter: int = 0
+        # Session ownership tracking: session_id -> chat_id
+        # Prevents users from hijacking each other's sessions
+        self.session_owners: dict[str, int] = {}
 
     def queue_total(self) -> int:
         return sum(len(queue) for queue in self.queues.values())
@@ -212,6 +215,8 @@ class ChatSessionStore:
                     # never reach the claude --resume argv unvalidated.
                     continue
                 self.sessions[int(chat_id_str)] = canonical
+                # Record ownership when restoring sessions
+                self.session_owners[canonical] = int(chat_id_str)
             saved_modes = data.get("permission_modes_full", {})
             if isinstance(saved_modes, dict):
                 for chat_id_str, mode in saved_modes.items():
@@ -258,6 +263,32 @@ class ChatSessionStore:
         if session_id:
             return session_id, True
         return None, False
+
+    def normalize_and_validate_session_id(
+        self, session_id: str, chat_id: int
+    ) -> str | None:
+        """Validate and normalize a session UUID, checking ownership.
+
+        Returns the canonical UUID if valid and either:
+        - The session is not yet owned (first time being attached)
+        - The session is already owned by this chat_id
+
+        Returns None if:
+        - The UUID format is invalid
+        - The session is owned by a different chat_id
+        """
+        try:
+            normalized = str(uuid.UUID(session_id.strip()))
+        except (AttributeError, ValueError):
+            return None
+
+        # Check ownership
+        owner_chat_id = self.session_owners.get(normalized)
+        if owner_chat_id is not None and owner_chat_id != chat_id:
+            # Session belongs to another chat - reject
+            return None
+
+        return normalized
 
     def effective_permission_mode(self, chat_id: int) -> str | None:
         return self.permission_modes.get(chat_id, self.default_permission_mode)
@@ -340,12 +371,17 @@ class ChatSessionStore:
         if self.session_versions.get(chat_id, 0) != expected_version:
             return False
         self.sessions[chat_id] = session_id
+        # Record ownership when setting session
+        self.session_owners[session_id] = chat_id
         return True
 
     def reset_chat(self, chat_id: int) -> int:
         """Reset a chat to a clean slate; return how many queued items were dropped."""
         self.bump_session_version(chat_id)
-        self.sessions.pop(chat_id, None)
+        old_session = self.sessions.pop(chat_id, None)
+        # Remove ownership record for the old session
+        if old_session:
+            self.session_owners.pop(old_session, None)
         dropped = self.queues.pop(chat_id, None)
         # /new is a full reset: drop per-chat overrides so a
         # new session never silently inherits a stale (and possibly unsafe,
@@ -358,7 +394,13 @@ class ChatSessionStore:
 
     def attach_session(self, chat_id: int, session_id: str) -> None:
         self.bump_session_version(chat_id)
+        old_session = self.sessions.get(chat_id)
+        # Remove ownership of old session if any
+        if old_session and old_session != session_id:
+            self.session_owners.pop(old_session, None)
         self.sessions[chat_id] = session_id
+        # Record ownership of new session
+        self.session_owners[session_id] = chat_id
         self.runtime_statuses.pop(chat_id, None)
         self.queues.pop(chat_id, None)
 
