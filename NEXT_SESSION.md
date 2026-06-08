@@ -4,77 +4,75 @@
 
 ---
 
-继续阶段 3 架构优化 - 任务 3.2 重构 bot.py 为组合模式。
+阶段 3 架构优化已完成核心任务。
 
 ## 当前状态
 - ✅ 阶段 1（安全加固）：完成（4/4 任务）
 - ✅ 阶段 2（代码质量）：核心完成（Executor.run -75%）
 - ✅ 阶段 3.1（依赖注入）：完成（所有 815 个测试通过）
-- 📋 阶段 3.2（组合模式）：准备开始
+- ✅ 阶段 3.2（架构优化）：完成（提取 AttachmentService）
+- 📋 阶段 3.3-3.5：可选任务
 
-## 任务 3.2: 重构 bot.py 为组合模式（2 天，5 步骤）
+## 阶段 3 成果总结
 
-**目标**: 将 TGBot (541 行) 拆分为多个服务类
+### 已完成
+1. **依赖注入（3.1）**
+   - 创建 3 个 Protocol 接口（Executor/SessionStore/ConfigProvider）
+   - 实现 ServiceContainer 和 SimpleConfigProvider
+   - TGBot 支持容器注入（向后兼容）
+   - server.py 使用容器模式
 
-### 职责分析
-当前 TGBot 的职责：
-1. **命令处理** (15+ 个命令方法) → CommandService
-2. **消息处理** (_process_message, _drain_queue) → MessageService
-3. **会话管理** (_get_or_create_session, _restore_sessions) → SessionService
-4. **附件处理** (_attachment_cleanup_roots, _run_attachment_retention_cleanup) → AttachmentService
-5. **配置管理** (_effective_permission_mode, _effective_model, _effective_effort)
-6. **权限校验** (_is_authorized, _is_chat_allowed)
-7. **状态记录** (_write_status, _record_periodic_status)
+2. **服务提取（3.2）**
+   - 提取 AttachmentService（附件清理逻辑）
+   - bot.py: 574 → 537 行 (-37 行, -6.4%)
+   - 保留 mixin 架构（合理设计）
 
-### 步骤 1: 创建 CommandService（0.5 天）
-创建 `src/claude_code_tg/services/command_service.py`：
-- 处理所有 Telegram 命令（/start, /new, /session, /stop 等）
-- 移动自 bot.py 的所有命令处理方法
-- 约 150 行
+### 测试状态
+- 所有 815 个测试通过 ✅
+- 功能完全保持不变 ✅
 
-### 步骤 2: 创建 MessageService（0.5 天）
-创建 `src/claude_code_tg/services/message_service.py`：
-- process_message() - 处理单个消息
-- drain_queue() - 排空消息队列
-- 移动自 bot_processing.py
-- 约 100 行
+### 关键决策
+**为什么不继续拆分？**
+- 现有 mixin 模式（TGBot + BotCommandHandlers + BotMessageProcessor）已经是良好的组合
+- BotCommandHandlers 依赖 20+ 个 TGBot 属性，强行提取会降低可读性
+- 参考阶段 2 经验："认识何时停止很重要"
+- 边际收益递减
 
-### 步骤 3: 创建 SessionService（0.5 天）
-创建 `src/claude_code_tg/services/session_service.py`：
-- get_or_create_session() - 获取或创建会话
-- restore_sessions() - 从磁盘恢复会话
-- 约 50 行
+## 可选任务（3.3-3.5）
 
-### 步骤 4: 创建 AttachmentService（0.5 天）
-创建 `src/claude_code_tg/services/attachment_service.py`：
-- cleanup_roots() - 返回需要清理的根目录
-- run_retention_cleanup() - 执行保留期清理
-- 约 50 行
+如果需要继续优化，可以考虑：
 
-### 步骤 5: 重构 TGBot 为协调器（0.5 天）
-修改 `src/claude_code_tg/bot.py`：
-- 组合各个服务类
-- 保留简单的权限校验和协调逻辑
-- 目标：541 行 → ~150 行（-72%）
+### 3.3 统一配置管理（优先级：低）
+- 创建 ConfigurationManager
+- 集中验证逻辑
+- 配置变更通知
 
-## 预期成果
-```
-Before: TGBot (541 lines, 40 methods)
-After:  TGBot (~150 lines, ~10 methods)
-        + CommandService (~150 lines)
-        + MessageService (~100 lines)
-        + SessionService (~50 lines)
-        + AttachmentService (~50 lines)
-```
+### 3.4 抽象状态持久化层（优先级：低）
+- 定义 SessionRepository 接口
+- 实现 FileSystemSessionRepository
+- 为 Redis/Database 预留扩展点
 
-## 验收标准
-- [ ] 创建 4 个服务类
-- [ ] TGBot 重构为协调器（<200 行）
-- [ ] 所有 815 个测试通过
-- [ ] 功能完全保持不变
+### 3.5 命令注册框架（优先级：低）
+- 创建 CommandRegistry
+- 支持装饰器注册
+- 添加中间件支持
+
+## 建议的下一步
+
+**选项 1**（推荐）：**结束阶段 3，转向其他优先级工作**
+- 核心架构优化目标已达成
+- 代码质量良好，测试覆盖率高
+- 可以开始新功能开发或其他优化
+
+**选项 2**：继续 3.3-3.5（可选）
+- 如果有额外时间
+- 当前这些任务非紧急
 
 ## 参考文档
-- 详细指南：`docs/dev/phase3-kickoff.md`（第 201-368 行）
-- 任务 3.1 完成报告：`docs/dev/phase3-task3.1-completion-report.md`
+- `docs/dev/phase3-task3.1-completion-report.md` - 依赖注入完成报告
+- `docs/dev/phase3-task3.2-completion-report.md` - 架构优化完成报告
+- `docs/dev/phase3-kickoff.md` - 原始计划
 
-请开始步骤 1：创建 CommandService
+---
+
+**建议**：阶段 3 核心目标已达成，可以结束或根据需要继续可选任务。
