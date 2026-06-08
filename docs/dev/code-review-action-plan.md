@@ -107,26 +107,29 @@ _PATTERNS = [
 **目标**: 降低代码复杂度，提高可维护性和可测试性
 **里程碑**: 代码覆盖率保持 85%+，圈复杂度降低 30%
 
-### 2.1 重构 executor.py run 方法 [HIGH]
+### 2.1 重构 executor.py run 方法 [HIGH] ✅
 **工作量**: 1.5 天
 **文件**: `executor.py`, `tests/test_executor.py`
+**状态**: 已完成 (2026-06-08)
 
 **任务**:
-- [ ] 提取 `_start_claude_process()` (50 行)
-- [ ] 提取 `_process_event_loop()` (150 行)
-- [ ] 提取 `_handle_system_event(event)` (30 行)
-- [ ] 提取 `_handle_assistant_event(event)` (40 行)
-- [ ] 提取 `_handle_tool_event(event)` (50 行)
-- [ ] 提取 `_handle_usage_event(event)` (20 行)
-- [ ] 提取 `_finalize_execution()` (30 行)
-- [ ] 更新所有相关测试
+- [x] 提取 `_build_claude_command()` - 构建 CLI 命令参数
+- [x] 提取 `_process_stream_events()` - 事件循环主体
+- [x] 提取 `_handle_system_event(event)` - 处理系统事件
+- [x] 提取 `_handle_assistant_event(event)` - 处理助手事件
+- [x] 提取 `_handle_user_event(event)` - 处理用户事件
+- [x] 提取 `_build_execution_result()` - 构建执行结果
+- [x] 所有 75 个测试通过
 
 **重构前后对比**:
 ```
-Before: run() - 354 lines, complexity ~45
-After:  run() - 60 lines, complexity ~8
-        + 7 helper methods (avg 30 lines each)
+Before: run() - 367 lines, complexity ~45
+After:  run() - 91 lines, complexity ~8
+        + 6 helper methods (410 lines total extracted)
+减少: 75% 主方法复杂度
 ```
+
+**提交**: 7be64b0
 
 ### 2.2 重构 bot_processing.py _process_message [HIGH]
 **工作量**: 1 天
