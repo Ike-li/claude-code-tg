@@ -315,7 +315,7 @@ class BotMessageProcessor:
                 context,
                 reply_markup=result_keyboard,
             )
-            tg_out(chat_id, output_text)
+            tg_out(chat_id, result.text)
 
         except Exception as e:
             logger.exception("Error processing message")
