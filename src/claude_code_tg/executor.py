@@ -492,26 +492,16 @@ class Executor:
     def new_session_id(self) -> str:
         return str(uuid.uuid4())
 
-    async def run(
+    def _build_claude_command(
         self,
-        prompt: str,
-        chat_id: int,
-        session_id: str | None = None,
-        project_dir: str = ".",
-        timeout: int = DEFAULT_TIMEOUT_SECONDS,
-        permission_mode: str | None = None,
-        model: str | None = None,
-        effort: str | None = None,
-        cli_resume_compat: bool = False,
-        on_tool_use: Callable[[int], Awaitable[None]] | None = None,
-        on_event: Callable[[RunEvent], Awaitable[None]] | None = None,
-    ) -> ExecutionResult:
-        is_new = session_id is None
-        active_session_id = session_id or self.new_session_id()
-
-        if len(prompt) > MAX_PROMPT_LENGTH:
-            prompt = prompt[:MAX_PROMPT_LENGTH] + "\n...(truncated)"
-
+        *,
+        session_id: str,
+        is_new: bool,
+        permission_mode: str | None,
+        model: str | None,
+        effort: str | None,
+    ) -> list[str]:
+        """构建 Claude CLI 命令参数列表。"""
         cmd = [
             "claude",
             "-p",
@@ -531,240 +521,279 @@ class Executor:
         )
 
         if is_new:
-            cmd.extend(["--session-id", active_session_id])
+            cmd.extend(["--session-id", session_id])
         else:
-            cmd.extend(["--resume", active_session_id])
+            cmd.extend(["--resume", session_id])
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            limit=1024 * 1024,  # 1MB buffer for large CLI output
-            cwd=project_dir,
-            start_new_session=True,
+        return cmd
+
+    async def _handle_system_event(
+        self,
+        event: dict[str, object],
+        emit: Callable[[RunEvent], Awaitable[None]],
+    ) -> None:
+        """处理系统类型事件，提取运行时元数据。"""
+        runtime_model = _runtime_str(event.get("model"))
+        runtime_permission_mode = _runtime_str(
+            event.get("permissionMode"), limit=80
         )
-        self._processes[chat_id] = process
+        runtime_fast_mode_state = _runtime_str(
+            event.get("fast_mode_state"), limit=40
+        )
+        runtime_claude_code_version = _runtime_str(
+            event.get("claude_code_version"), limit=80
+        )
+        runtime_cwd = _runtime_str(event.get("cwd"), limit=500)
+        runtime_mcp_servers = _mcp_server_statuses(event.get("mcp_servers"))
+        if (
+            runtime_model
+            or runtime_permission_mode
+            or runtime_fast_mode_state
+            or runtime_claude_code_version
+            or runtime_cwd
+            or runtime_mcp_servers
+        ):
+            await emit(
+                RunEvent(
+                    kind="runtime",
+                    runtime_model=runtime_model,
+                    runtime_permission_mode=runtime_permission_mode,
+                    runtime_fast_mode_state=runtime_fast_mode_state,
+                    runtime_claude_code_version=runtime_claude_code_version,
+                    runtime_cwd=runtime_cwd,
+                    runtime_mcp_servers=runtime_mcp_servers,
+                )
+            )
 
-        tool_count = 0
-        result_data: dict[str, object] | None = None
-        pending_tool_ids: list[str] = []
-        tool_names_by_id: dict[str, str] = {}
-        tool_indices_by_id: dict[str, int] = {}
+    async def _handle_assistant_event(
+        self,
+        event: dict[str, object],
+        emit: Callable[[RunEvent], Awaitable[None]],
+        on_tool_use: Callable[[int], Awaitable[None]] | None,
+        tool_count: int,
+        pending_tool_ids: list[str],
+        tool_names_by_id: dict[str, str],
+        tool_indices_by_id: dict[str, int],
+    ) -> int:
+        """处理助手事件，提取工具使用和文本内容。返回更新后的 tool_count。"""
+        message = event.get("message", {})
+        if not isinstance(message, dict):
+            return tool_count
 
-        async def emit(event: RunEvent) -> None:
-            if on_event:
-                await on_event(event)
+        runtime_model = _runtime_str(message.get("model"))
+        if runtime_model:
+            await emit(RunEvent(kind="runtime", runtime_model=runtime_model))
 
-        stderr_task = asyncio.create_task(_drain_stderr(process.stderr))
-        await _write_prompt_stdin(process.stdin, prompt)
-        claude_send(chat_id, prompt)
+        usage = _usage_snapshot(message.get("usage"))
+        content = message.get("content", [])
+        emitted_content_event = False
 
-        try:
-            assert process.stdout is not None
-            idle_timeout = _coerce_timeout_seconds(timeout)
-            while True:
-                try:
-                    line = await asyncio.wait_for(
-                        process.stdout.readline(), timeout=idle_timeout
-                    )
-                except TimeoutError:
-                    if process.returncode is None:
-                        logger.debug(
-                            "Claude process still running after %ss without stdout",
-                            idle_timeout,
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                block_type = block.get("type")
+
+                if block_type == "tool_use":
+                    tool_count += 1
+                    tool_name = block.get("name")
+                    if not isinstance(tool_name, str):
+                        tool_name = "tool"
+                    tool_id = block.get("id")
+                    if not isinstance(tool_id, str) or not tool_id:
+                        tool_id = f"tool-{tool_count}"
+                    pending_tool_ids.append(tool_id)
+                    tool_names_by_id[tool_id] = tool_name
+                    tool_indices_by_id[tool_id] = tool_count
+                    await emit(
+                        RunEvent(
+                            kind="tool_started",
+                            tool_index=tool_count,
+                            tool_name=tool_name,
+                            tool_id=tool_id,
+                            summary=summarize_tool_input(
+                                tool_name, block.get("input")
+                            ),
+                            input_tokens=usage.input_tokens,
+                            output_tokens=usage.output_tokens,
+                            cache_creation_input_tokens=(
+                                usage.cache_creation_input_tokens
+                            ),
+                            cache_read_input_tokens=(
+                                usage.cache_read_input_tokens
+                            ),
                         )
-                        continue
-                    break
-                except (asyncio.LimitOverrunError, ValueError):
-                    # A single stream-json line exceeded the 1MB buffer (e.g. a
-                    # huge tool result). Drain and discard that line instead of
-                    # letting the exception crash the whole run.
-                    logger.warning(
-                        "Discarding oversized stdout line (>%d bytes)",
-                        1024 * 1024,
                     )
-                    await _discard_oversized_line(process.stdout)
-                    continue
-                if not line:
-                    break
+                    emitted_content_event = True
+                    if on_tool_use:
+                        await on_tool_use(tool_count)
 
-                decoded = line.decode(errors="replace").strip()
-                if not decoded:
-                    continue
-                try:
-                    event = json.loads(decoded)
-                except json.JSONDecodeError:
-                    continue
-
-                event_type = event.get("type")
-
-                if event_type == "system":
-                    runtime_model = _runtime_str(event.get("model"))
-                    runtime_permission_mode = _runtime_str(
-                        event.get("permissionMode"), limit=80
-                    )
-                    runtime_fast_mode_state = _runtime_str(
-                        event.get("fast_mode_state"), limit=40
-                    )
-                    runtime_claude_code_version = _runtime_str(
-                        event.get("claude_code_version"), limit=80
-                    )
-                    runtime_cwd = _runtime_str(event.get("cwd"), limit=500)
-                    runtime_mcp_servers = _mcp_server_statuses(event.get("mcp_servers"))
-                    if (
-                        runtime_model
-                        or runtime_permission_mode
-                        or runtime_fast_mode_state
-                        or runtime_claude_code_version
-                        or runtime_cwd
-                        or runtime_mcp_servers
-                    ):
+                elif block_type == "text":
+                    text = block.get("text")
+                    if isinstance(text, str) and text.strip():
                         await emit(
                             RunEvent(
-                                kind="runtime",
-                                runtime_model=runtime_model,
-                                runtime_permission_mode=runtime_permission_mode,
-                                runtime_fast_mode_state=runtime_fast_mode_state,
-                                runtime_claude_code_version=(
-                                    runtime_claude_code_version
+                                kind="assistant_text",
+                                text=_truncate_text(
+                                    sanitize(text.strip()), 300
                                 ),
-                                runtime_cwd=runtime_cwd,
-                                runtime_mcp_servers=runtime_mcp_servers,
-                            )
-                        )
-
-                elif event_type == "assistant":
-                    message = event.get("message", {})
-                    if not isinstance(message, dict):
-                        continue
-                    runtime_model = _runtime_str(message.get("model"))
-                    if runtime_model:
-                        await emit(
-                            RunEvent(kind="runtime", runtime_model=runtime_model)
-                        )
-                    usage = _usage_snapshot(message.get("usage"))
-                    content = message.get("content", [])
-                    emitted_content_event = False
-                    if isinstance(content, list):
-                        for block in content:
-                            if not isinstance(block, dict):
-                                continue
-                            block_type = block.get("type")
-                            if block_type == "tool_use":
-                                tool_count += 1
-                                tool_name = block.get("name")
-                                if not isinstance(tool_name, str):
-                                    tool_name = "tool"
-                                tool_id = block.get("id")
-                                if not isinstance(tool_id, str) or not tool_id:
-                                    tool_id = f"tool-{tool_count}"
-                                pending_tool_ids.append(tool_id)
-                                tool_names_by_id[tool_id] = tool_name
-                                tool_indices_by_id[tool_id] = tool_count
-                                await emit(
-                                    RunEvent(
-                                        kind="tool_started",
-                                        tool_index=tool_count,
-                                        tool_name=tool_name,
-                                        tool_id=tool_id,
-                                        summary=summarize_tool_input(
-                                            tool_name, block.get("input")
-                                        ),
-                                        input_tokens=usage.input_tokens,
-                                        output_tokens=usage.output_tokens,
-                                        cache_creation_input_tokens=(
-                                            usage.cache_creation_input_tokens
-                                        ),
-                                        cache_read_input_tokens=(
-                                            usage.cache_read_input_tokens
-                                        ),
-                                    )
-                                )
-                                emitted_content_event = True
-                                if on_tool_use:
-                                    await on_tool_use(tool_count)
-                            elif block_type == "text":
-                                text = block.get("text")
-                                if isinstance(text, str) and text.strip():
-                                    await emit(
-                                        RunEvent(
-                                            kind="assistant_text",
-                                            text=_truncate_text(
-                                                sanitize(text.strip()), 300
-                                            ),
-                                            input_tokens=usage.input_tokens,
-                                            output_tokens=usage.output_tokens,
-                                            cache_creation_input_tokens=(
-                                                usage.cache_creation_input_tokens
-                                            ),
-                                            cache_read_input_tokens=(
-                                                usage.cache_read_input_tokens
-                                            ),
-                                        )
-                                    )
-                                    emitted_content_event = True
-                    if usage.has_values and not emitted_content_event:
-                        await emit(
-                            RunEvent(
-                                kind="usage",
                                 input_tokens=usage.input_tokens,
                                 output_tokens=usage.output_tokens,
                                 cache_creation_input_tokens=(
                                     usage.cache_creation_input_tokens
                                 ),
-                                cache_read_input_tokens=usage.cache_read_input_tokens,
+                                cache_read_input_tokens=(
+                                    usage.cache_read_input_tokens
+                                ),
                             )
                         )
+                        emitted_content_event = True
 
-                elif event_type == "user":
-                    content = event.get("message", {}).get("content", [])
-                    if isinstance(content, list):
-                        for block in content:
-                            if (
-                                not isinstance(block, dict)
-                                or block.get("type") != "tool_result"
-                            ):
-                                continue
-                            tool_id = block.get("tool_use_id")
-                            if not isinstance(tool_id, str) or not tool_id:
-                                tool_id = (
-                                    pending_tool_ids[0] if pending_tool_ids else ""
-                                )
-                            if tool_id in pending_tool_ids:
-                                pending_tool_ids.remove(tool_id)
-                            await emit(
-                                RunEvent(
-                                    kind="tool_result",
-                                    tool_index=tool_indices_by_id.get(tool_id),
-                                    tool_name=tool_names_by_id.get(tool_id, ""),
-                                    tool_id=tool_id,
-                                    output=summarize_tool_result_content(
-                                        block.get("content")
-                                    ),
-                                    is_error=bool(block.get("is_error", False)),
-                                )
-                            )
+        if usage.has_values and not emitted_content_event:
+            await emit(
+                RunEvent(
+                    kind="usage",
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                    cache_creation_input_tokens=(
+                        usage.cache_creation_input_tokens
+                    ),
+                    cache_read_input_tokens=usage.cache_read_input_tokens,
+                )
+            )
 
-                elif event_type == "result":
-                    result_data = event
+        return tool_count
 
-            await process.wait()
-        except BaseException:
-            # Includes asyncio.CancelledError (handler torn down / bot
-            # shutting down): never leak the subprocess or the stderr drain
-            # task. Signal synchronously — awaiting during cancellation could
-            # re-raise before cleanup completes.
-            if process.returncode is None:
-                self._terminate_process_tree(process)
-            stderr_task.cancel()
-            raise
-        finally:
-            # Guard by identity: a queued follow-up run for the same chat may
-            # have already replaced this entry; don't evict a newer process.
-            if self._processes.get(chat_id) is process:
-                self._processes.pop(chat_id, None)
+    async def _handle_user_event(
+        self,
+        event: dict[str, object],
+        emit: Callable[[RunEvent], Awaitable[None]],
+        pending_tool_ids: list[str],
+        tool_names_by_id: dict[str, str],
+        tool_indices_by_id: dict[str, int],
+    ) -> None:
+        """处理用户事件，提取工具结果。"""
+        content = event.get("message", {}).get("content", [])
+        if not isinstance(content, list):
+            return
 
+        for block in content:
+            if (
+                not isinstance(block, dict)
+                or block.get("type") != "tool_result"
+            ):
+                continue
+            tool_id = block.get("tool_use_id")
+            if not isinstance(tool_id, str) or not tool_id:
+                tool_id = pending_tool_ids[0] if pending_tool_ids else ""
+            if tool_id in pending_tool_ids:
+                pending_tool_ids.remove(tool_id)
+            await emit(
+                RunEvent(
+                    kind="tool_result",
+                    tool_index=tool_indices_by_id.get(tool_id),
+                    tool_name=tool_names_by_id.get(tool_id, ""),
+                    tool_id=tool_id,
+                    output=summarize_tool_result_content(
+                        block.get("content")
+                    ),
+                    is_error=bool(block.get("is_error", False)),
+                )
+            )
+
+    async def _process_stream_events(
+        self,
+        *,
+        process: asyncio.subprocess.Process,
+        timeout: int,
+        emit: Callable[[RunEvent], Awaitable[None]],
+        on_tool_use: Callable[[int], Awaitable[None]] | None,
+        tool_count: int,
+        pending_tool_ids: list[str],
+        tool_names_by_id: dict[str, str],
+        tool_indices_by_id: dict[str, int],
+    ) -> tuple[int, dict[str, object] | None]:
+        """处理 stdout 流事件，返回 (tool_count, result_data)。"""
+        result_data: dict[str, object] | None = None
+        assert process.stdout is not None
+        idle_timeout = _coerce_timeout_seconds(timeout)
+
+        while True:
+            try:
+                line = await asyncio.wait_for(
+                    process.stdout.readline(), timeout=idle_timeout
+                )
+            except TimeoutError:
+                if process.returncode is None:
+                    logger.debug(
+                        "Claude process still running after %ss without stdout",
+                        idle_timeout,
+                    )
+                    continue
+                break
+            except (asyncio.LimitOverrunError, ValueError):
+                logger.warning(
+                    "Discarding oversized stdout line (>%d bytes)",
+                    1024 * 1024,
+                )
+                await _discard_oversized_line(process.stdout)
+                continue
+            if not line:
+                break
+
+            decoded = line.decode(errors="replace").strip()
+            if not decoded:
+                continue
+            try:
+                event = json.loads(decoded)
+            except json.JSONDecodeError:
+                continue
+
+            event_type = event.get("type")
+
+            if event_type == "system":
+                await self._handle_system_event(event, emit)
+
+            elif event_type == "assistant":
+                tool_count = await self._handle_assistant_event(
+                    event,
+                    emit,
+                    on_tool_use,
+                    tool_count,
+                    pending_tool_ids,
+                    tool_names_by_id,
+                    tool_indices_by_id,
+                )
+
+            elif event_type == "user":
+                await self._handle_user_event(
+                    event,
+                    emit,
+                    pending_tool_ids,
+                    tool_names_by_id,
+                    tool_indices_by_id,
+                )
+
+            elif event_type == "result":
+                result_data = event
+
+        await process.wait()
+        return tool_count, result_data
+
+    async def _build_execution_result(
+        self,
+        *,
+        chat_id: int,
+        active_session_id: str,
+        project_dir: str,
+        cli_resume_compat: bool,
+        process: asyncio.subprocess.Process,
+        stderr_task: asyncio.Task,
+        result_data: dict[str, object] | None,
+        tool_count: int,
+        emit: Callable[[RunEvent], Awaitable[None]],
+    ) -> ExecutionResult:
+        """构建最终执行结果，处理三种情况：用户停止、正常结果、错误退出。"""
         was_stopped = chat_id in self._stopped
         self._stopped.discard(chat_id)
 
@@ -779,6 +808,7 @@ class Executor:
                     session_id_to_rewrite,
                 )
 
+        # 情况 1: 用户停止
         if was_stopped:
             await _await_stderr(stderr_task)
             apply_cli_resume_compat(active_session_id)
@@ -790,6 +820,7 @@ class Executor:
                 tool_count=tool_count,
             )
 
+        # 情况 2: 正常结果
         if result_data:
             await _await_stderr(stderr_task)
             raw_text = result_data.get("result", "")
@@ -838,6 +869,7 @@ class Executor:
                 tool_count=tool_count,
             )
 
+        # 情况 3: 无结果数据
         stderr_output = (await stderr_task).strip()
 
         if process.returncode != 0:
@@ -858,6 +890,97 @@ class Executor:
             text="执行完成，无输出。",
             session_id=active_session_id,
             tool_count=tool_count,
+        )
+
+    async def run(
+        self,
+        prompt: str,
+        chat_id: int,
+        session_id: str | None = None,
+        project_dir: str = ".",
+        timeout: int = DEFAULT_TIMEOUT_SECONDS,
+        permission_mode: str | None = None,
+        model: str | None = None,
+        effort: str | None = None,
+        cli_resume_compat: bool = False,
+        on_tool_use: Callable[[int], Awaitable[None]] | None = None,
+        on_event: Callable[[RunEvent], Awaitable[None]] | None = None,
+    ) -> ExecutionResult:
+        is_new = session_id is None
+        active_session_id = session_id or self.new_session_id()
+
+        if len(prompt) > MAX_PROMPT_LENGTH:
+            prompt = prompt[:MAX_PROMPT_LENGTH] + "\n...(truncated)"
+
+        cmd = self._build_claude_command(
+            session_id=active_session_id,
+            is_new=is_new,
+            permission_mode=permission_mode,
+            model=model,
+            effort=effort,
+        )
+
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            limit=1024 * 1024,  # 1MB buffer for large CLI output
+            cwd=project_dir,
+            start_new_session=True,
+        )
+        self._processes[chat_id] = process
+
+        tool_count = 0
+        result_data: dict[str, object] | None = None
+        pending_tool_ids: list[str] = []
+        tool_names_by_id: dict[str, str] = {}
+        tool_indices_by_id: dict[str, int] = {}
+
+        async def emit(event: RunEvent) -> None:
+            if on_event:
+                await on_event(event)
+
+        stderr_task = asyncio.create_task(_drain_stderr(process.stderr))
+        await _write_prompt_stdin(process.stdin, prompt)
+        claude_send(chat_id, prompt)
+
+        try:
+            tool_count, result_data = await self._process_stream_events(
+                process=process,
+                timeout=timeout,
+                emit=emit,
+                on_tool_use=on_tool_use,
+                tool_count=tool_count,
+                pending_tool_ids=pending_tool_ids,
+                tool_names_by_id=tool_names_by_id,
+                tool_indices_by_id=tool_indices_by_id,
+            )
+        except BaseException:
+            # Includes asyncio.CancelledError (handler torn down / bot
+            # shutting down): never leak the subprocess or the stderr drain
+            # task. Signal synchronously — awaiting during cancellation could
+            # re-raise before cleanup completes.
+            if process.returncode is None:
+                self._terminate_process_tree(process)
+            stderr_task.cancel()
+            raise
+        finally:
+            # Guard by identity: a queued follow-up run for the same chat may
+            # have already replaced this entry; don't evict a newer process.
+            if self._processes.get(chat_id) is process:
+                self._processes.pop(chat_id, None)
+
+        return await self._build_execution_result(
+            chat_id=chat_id,
+            active_session_id=active_session_id,
+            project_dir=project_dir,
+            cli_resume_compat=cli_resume_compat,
+            process=process,
+            stderr_task=stderr_task,
+            result_data=result_data,
+            tool_count=tool_count,
+            emit=emit,
         )
 
     async def stop(self, chat_id: int) -> bool:
