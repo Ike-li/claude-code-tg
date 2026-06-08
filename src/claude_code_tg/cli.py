@@ -21,6 +21,7 @@ from claude_code_tg.cli_instances import (
     rewind_if_truncated as _rewind_if_truncated,
     show_instance_logs as _show_instance_logs,
 )
+from claude_code_tg.config_manager import ConfigManager, ConfigNotFoundError
 from claude_code_tg.cli_parser import CliCommandHandlers, build_parser as _build_parser
 from claude_code_tg.diagnostics import (
     doctor_exit_code as _doctor_exit_code,
@@ -164,7 +165,25 @@ def cmd_start(args: argparse.Namespace) -> None:
         print("Error: Claude Code CLI not found.")
         sys.exit(1)
 
-    env_file = _resolve_single_env(args.env, command="start")
+    # 配置文件搜索：支持多级路径
+    if args.env:
+        # 用户指定了 --env，使用原有逻辑
+        env_file = _resolve_single_env(args.env, command="start")
+    else:
+        # 未指定 --env，使用 ConfigManager 搜索
+        config_manager = ConfigManager()
+        try:
+            env_file = config_manager.find_config()
+            print(f"使用配置文件: {env_file}")
+        except ConfigNotFoundError as e:
+            print(f"错误: {e}")
+            print("\n提示:")
+            print("  1. 在当前目录创建 .env 文件，或")
+            print("  2. 使用 --env 参数指定配置文件，或")
+            print("  3. 在 ~/.tgcc/configs/default.env 创建默认配置")
+            print("\n运行 'tgcc init' 可以快速创建配置文件。")
+            sys.exit(1)
+
     _reject_symlinked_env_file(env_file)
     if not env_file.exists():
         print(
@@ -235,7 +254,17 @@ def cmd_start(args: argparse.Namespace) -> None:
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    env_file = _resolve_single_env(args.env, command="stop")
+    # 配置文件搜索
+    if args.env:
+        env_file = _resolve_single_env(args.env, command="stop")
+    else:
+        config_manager = ConfigManager()
+        try:
+            env_file = config_manager.find_config()
+        except ConfigNotFoundError as e:
+            print(f"错误: {e}")
+            sys.exit(1)
+
     running = _running_instances(str(env_file))
     if not running:
         print("Not running.")
@@ -283,7 +312,17 @@ def cmd_status(args: argparse.Namespace) -> None:
         print("Use 'tgcc logs --env <file>' to inspect one instance.")
         return
 
-    env_file = _resolve_single_env(args.env, command="status")
+    # 配置文件搜索
+    if args.env:
+        env_file = _resolve_single_env(args.env, command="status")
+    else:
+        config_manager = ConfigManager()
+        try:
+            env_file = config_manager.find_config()
+        except ConfigNotFoundError as e:
+            print(f"错误: {e}")
+            sys.exit(1)
+
     running = _running_instances(str(env_file))
     if running:
         for pid, _, logfile in running:
@@ -296,6 +335,7 @@ def cmd_status(args: argparse.Namespace) -> None:
 
 
 def cmd_logs(args: argparse.Namespace) -> None:
+    # 使用原有逻辑（保持多 .env 文件检测）
     env_file = _resolve_single_env(args.env, command="logs")
     _, logfile = _instance_paths(str(env_file), create=False)
     symlink = _rejectable_symlink_path_component(logfile)
