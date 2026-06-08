@@ -162,6 +162,7 @@ class BotCommandHandlers:
     sessions: dict[int, str]
     state: ChatSessionStore
     _is_authorized: Callable[[int], bool]
+    _is_chat_allowed: Callable[[int, str | None], bool]
     _effort_label: Callable[[int], str]
     _model_label: Callable[[int], str]
     _normalize_session_id: Callable[[str], str | None]

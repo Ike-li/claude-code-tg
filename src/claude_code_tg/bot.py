@@ -21,6 +21,7 @@ from claude_code_tg.bot_processing import BotMessageProcessor
 from claude_code_tg.command_view import CommandPickerStore
 from claude_code_tg.container import ServiceContainer
 from claude_code_tg.executor import (
+    Executor,
     normalize_effort,
     normalize_model,
     normalize_permission_mode,
@@ -32,7 +33,7 @@ from claude_code_tg.result_view import ResultActionStore
 from claude_code_tg.resume_view import ResumePickerStore
 from claude_code_tg.run_view import RunViewStore
 from claude_code_tg.services import AttachmentService
-from claude_code_tg.sessions import ReplyCallback
+from claude_code_tg.sessions import ChatSessionStore, ReplyCallback
 from claude_code_tg.utils import _format_uptime
 
 logger = logging.getLogger(__name__)
@@ -88,8 +89,8 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
 
         # 从容器获取核心服务
         self.container = container
-        self.executor = container.executor
-        self.state = container.session_store
+        self.executor = cast(Executor, container.executor)
+        self.state = cast(ChatSessionStore, container.session_store)
         self.project_dir = container.project_dir
         self.timeout = container.timeout
         self.cli_resume_compat_enabled = container.cli_resume_compat

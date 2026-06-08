@@ -673,7 +673,10 @@ class Executor:
         tool_indices_by_id: dict[str, int],
     ) -> None:
         """处理用户事件，提取工具结果。"""
-        content = event.get("message", {}).get("content", [])
+        message = event.get("message", {})
+        if not isinstance(message, dict):
+            return
+        content = message.get("content", [])
         if not isinstance(content, list):
             return
 
