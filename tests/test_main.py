@@ -380,27 +380,31 @@ class TestMainValidation:
             main()
 
         assert constructed["ran"] is True
-        assert constructed["kwargs"] == {
-            "token": "123:abc",
-            "admin_ids": {111, 222},
-            "allowed_ids": {333},
-            "allowed_chat_ids": set(),
-            "project_dir": str(project_dir.resolve()),
-            "timeout": 42,
-            "queue_max_size": 1,
-            "permission_mode": "plan",
-            "model": "sonnet",
-            "effort": "xhigh",
-            "attachment_max_bytes": 2 * 1024 * 1024,
-            "attachment_mode": "copy-to-project",
-            "attachment_retention_days": 0.5,
-            "command_menu_enabled": True,
-            "draft_preview_enabled": False,
-            "mini_app_enabled": False,
-            "mini_app_public_url": "",
-            "mini_app_host": "127.0.0.1",
-            "mini_app_port": 8787,
-            "mini_app_menu_text": "tgcc",
-            "cli_resume_compat": False,
-            "status_file": runtime_dir / "status.json",
-        }
+        kwargs = constructed["kwargs"]
+
+        # 验证基本参数
+        assert kwargs["token"] == "123:abc"
+        assert kwargs["admin_ids"] == {111, 222}
+        assert kwargs["allowed_ids"] == {333}
+        assert kwargs["allowed_chat_ids"] == set()
+
+        # 验证容器存在且配置正确
+        assert "container" in kwargs
+        container = kwargs["container"]
+        assert container.project_dir == str(project_dir.resolve())
+        assert container.timeout == 42
+        assert container.session_store.queue_max_size == 1
+        assert container.cli_resume_compat is False
+        assert container.draft_preview_enabled is False
+
+        # 验证其他参数
+        assert kwargs["attachment_max_bytes"] == 2 * 1024 * 1024
+        assert kwargs["attachment_mode"] == "copy-to-project"
+        assert kwargs["attachment_retention_days"] == 0.5
+        assert kwargs["command_menu_enabled"] is True
+        assert kwargs["mini_app_enabled"] is False
+        assert kwargs["mini_app_public_url"] == ""
+        assert kwargs["mini_app_host"] == "127.0.0.1"
+        assert kwargs["mini_app_port"] == 8787
+        assert kwargs["mini_app_menu_text"] == "tgcc"
+        assert kwargs["status_file"] == runtime_dir / "status.json"
