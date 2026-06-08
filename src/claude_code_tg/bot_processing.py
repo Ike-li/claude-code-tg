@@ -115,6 +115,32 @@ class BotMessageProcessor:
     def _write_status(self) -> None:
         raise NotImplementedError
 
+    def _build_final_output(
+        self,
+        result_text: str,
+        session_id: str,
+        tool_count: int,
+        duration_ms: int,
+        is_error: bool,
+    ) -> str:
+        """构建最终输出文本，包含 session、统计信息和结果。"""
+        session_prefix = ""
+        if session_id:
+            session_prefix = f"📎 Session: {session_id[:8]}...\n"
+
+        summary = ""
+        if tool_count > 0:
+            summary = (
+                f"🔧 {tool_count} 工具 | "
+                f"⏱ {duration_ms / 1000:.1f}s\n\n"
+            )
+
+        output_text = result_text
+        if is_error and not output_text.startswith("❌"):
+            output_text = f"❌ {output_text}"
+
+        return session_prefix + summary + output_text
+
     async def _process_message(
         self,
         chat_id: int,
@@ -270,21 +296,13 @@ class BotMessageProcessor:
 
             await update_status(force=True)
 
-            session_prefix = ""
-            if result.session_id:
-                session_prefix = f"📎 Session: {result.session_id[:8]}...\n"
-
-            summary = ""
-            if result.tool_count > 0:
-                summary = (
-                    f"🔧 {result.tool_count} 工具 | "
-                    f"⏱ {result.duration_ms / 1000:.1f}s\n\n"
-                )
-            output_text = result.text
-            if result.is_error and not output_text.startswith("❌"):
-                output_text = f"❌ {output_text}"
-
-            final_text = session_prefix + summary + output_text
+            final_text = self._build_final_output(
+                result_text=result.text,
+                session_id=result.session_id,
+                tool_count=result.tool_count,
+                duration_ms=result.duration_ms,
+                is_error=result.is_error,
+            )
             result_keyboard = build_result_keyboard(
                 chat_id,
                 prompt,
