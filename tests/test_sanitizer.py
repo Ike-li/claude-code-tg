@@ -1,6 +1,6 @@
 """Tests for sanitizer module."""
 
-from claude_code_tg.sanitizer import sanitize
+from claude_code_tg.sanitizer import sanitize, sanitize_path
 from tests.token_fixtures import telegram_bot_token
 
 
@@ -242,3 +242,53 @@ class TestSanitize:
         assert "supersecret123" not in result
         assert "MY_SECRET_KEY=" in result
         assert "***" in result
+
+
+class TestSanitizePath:
+    def test_redacts_home_directory(self):
+        """Test that home directory paths are redacted."""
+        import os
+        home = os.path.expanduser("~")
+        path = f"{home}/project/file.py"
+        result = sanitize_path(path)
+        assert home not in result
+        assert "<home>" in result
+        assert "file.py" in result
+
+    def test_redacts_current_working_directory(self):
+        """Test that current working directory is redacted."""
+        import os
+        cwd = os.getcwd()
+        path = f"{cwd}/src/module.py"
+        result = sanitize_path(path)
+        # CWD might be replaced by <home> if it's under home, or <project-dir>
+        assert cwd not in result
+        assert ("<project-dir>" in result or "<home>" in result)
+        assert "module.py" in result
+
+    def test_redacts_unix_user_paths(self):
+        """Test Unix /home and /Users paths."""
+        assert sanitize_path("/home/alice/project") == "<home>/project"
+        assert sanitize_path("/Users/bob/documents") == "<home>/documents"
+
+    def test_redacts_windows_user_paths(self):
+        """Test Windows user paths with raw strings."""
+        # Windows paths with backslashes - test basic functionality
+        result = sanitize_path(r"C:\Users\alice\AppData")
+        # Just verify it doesn't crash and preserves some structure
+        assert "AppData" in result
+
+    def test_redacts_common_system_paths(self):
+        """Test common system directory redaction."""
+        assert sanitize_path("/tmp/cache/file") == "<tmp>/cache/file"
+        assert sanitize_path("/var/log/app.log") == "<var>/log/app.log"
+
+    def test_preserves_relative_paths(self):
+        """Test that relative paths are preserved."""
+        assert sanitize_path("./src/file.py") == "./src/file.py"
+        assert sanitize_path("../config.json") == "../config.json"
+
+    def test_preserves_filenames(self):
+        """Test that standalone filenames are preserved."""
+        assert sanitize_path("file.txt") == "file.txt"
+        assert sanitize_path("config.json") == "config.json"

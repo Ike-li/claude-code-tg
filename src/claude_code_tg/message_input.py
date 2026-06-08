@@ -117,8 +117,9 @@ class TelegramInputBuilder:
                 # instead of a misleading "download failed".
                 with suppress(OSError):
                     target.unlink()
+                # Don't expose internal OSError details to user
                 raise ValueError(
-                    f"附件已下载，但复制到项目目录失败：{exc}。"
+                    "附件已下载，但复制到项目目录失败。"
                     "请检查 CLAUDE_PROJECT_DIR 是否存在且可写。"
                 ) from exc
 

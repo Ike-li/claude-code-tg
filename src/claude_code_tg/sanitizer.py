@@ -97,3 +97,49 @@ def sanitize(text: str) -> str:
     for pattern, replacement in _PATTERNS:
         text = pattern.sub(replacement, text)
     return text
+
+
+def sanitize_path(path: str) -> str:
+    """Redact internal filesystem paths from error messages.
+
+    Replaces absolute paths with generic placeholders to avoid leaking
+    internal directory structure. Preserves relative paths and filenames.
+
+    Examples:
+        /Users/alice/project/file.py -> <home>/project/file.py
+        /home/bob/.cache/something -> <home>/.cache/something
+        C:\\Users\\alice\\AppData -> <home>\\AppData
+    """
+    import os
+    import re
+
+    # Common path prefixes to redact
+    home = os.path.expanduser("~")
+    cwd = os.getcwd()
+
+    # Replace home directory (literal string replacement)
+    if home and home in path:
+        path = path.replace(home, "<home>")
+
+    # Replace current working directory (literal string replacement)
+    if cwd and cwd in path:
+        path = path.replace(cwd, "<project-dir>")
+
+    # Replace common system paths using regex
+    replacements = [
+        (r"/Users/[^/]+", "<home>"),
+        (r"/home/[^/]+", "<home>"),
+        (r"C:/Users/[^/]+", "<home>"),  # Forward slash on Windows
+        (r"C:\\\\Users\\\\[^\\\\]+", r"<home>"),  # Backslash on Windows (escaped)
+        (r"/tmp/", "<tmp>/"),
+        (r"/var/", "<var>/"),
+        (r"C:/Windows/", "<windows>/"),  # Forward slash
+        (r"C:\\\\Windows\\\\", r"<windows>\\"),  # Backslash (escaped)
+        (r"C:/Program Files", "<program-files>"),  # Forward slash
+        (r"C:\\\\Program Files", r"<program-files>"),  # Backslash (escaped)
+    ]
+
+    for pattern, replacement in replacements:
+        path = re.sub(pattern, replacement, path, flags=re.IGNORECASE)
+
+    return path

@@ -301,7 +301,8 @@ class BotMessageProcessor:
 
         except Exception as e:
             logger.exception("Error processing message")
-            err_text = sanitize(f"❌ 执行出错: {type(e).__name__}: {e}")
+            # Use generic error message to avoid leaking internal details
+            err_text = sanitize(f"❌ 执行出错: {type(e).__name__}")
             run_view.status = "failed"
             run_view.current_text = err_text
             run_view.finished_at = run_view.finished_at or time.monotonic()
