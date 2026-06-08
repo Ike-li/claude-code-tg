@@ -248,6 +248,7 @@ class TestSanitizePath:
     def test_redacts_home_directory(self):
         """Test that home directory paths are redacted."""
         import os
+
         home = os.path.expanduser("~")
         path = f"{home}/project/file.py"
         result = sanitize_path(path)
@@ -258,12 +259,13 @@ class TestSanitizePath:
     def test_redacts_current_working_directory(self):
         """Test that current working directory is redacted."""
         import os
+
         cwd = os.getcwd()
         path = f"{cwd}/src/module.py"
         result = sanitize_path(path)
         # CWD might be replaced by <home> if it's under home, or <project-dir>
         assert cwd not in result
-        assert ("<project-dir>" in result or "<home>" in result)
+        assert "<project-dir>" in result or "<home>" in result
         assert "module.py" in result
 
     def test_redacts_unix_user_paths(self):

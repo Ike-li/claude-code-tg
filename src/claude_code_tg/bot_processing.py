@@ -130,10 +130,7 @@ class BotMessageProcessor:
 
         summary = ""
         if tool_count > 0:
-            summary = (
-                f"🔧 {tool_count} 工具 | "
-                f"⏱ {duration_ms / 1000:.1f}s\n\n"
-            )
+            summary = f"🔧 {tool_count} 工具 | ⏱ {duration_ms / 1000:.1f}s\n\n"
 
         output_text = result_text
         if is_error and not output_text.startswith("❌"):

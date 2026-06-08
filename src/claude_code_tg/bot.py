@@ -74,7 +74,9 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         # 依赖注入：如果没有传入容器，使用传统参数创建
         if container is None:
             if project_dir is None:
-                raise ValueError("project_dir is required when container is not provided")
+                raise ValueError(
+                    "project_dir is required when container is not provided"
+                )
             container = ServiceContainer.create_default(
                 project_dir=project_dir,
                 timeout=timeout,

@@ -59,9 +59,7 @@ class ConfigManager:
         if env_path := os.environ.get("DOTENV_PATH"):
             path = Path(env_path)
             if not path.exists():
-                raise ConfigNotFoundError(
-                    f"DOTENV_PATH 指定的配置文件不存在: {path}"
-                )
+                raise ConfigNotFoundError(f"DOTENV_PATH 指定的配置文件不存在: {path}")
             return path.resolve()
 
         # 3. 当前目录

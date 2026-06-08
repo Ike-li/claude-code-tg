@@ -534,12 +534,8 @@ class Executor:
     ) -> None:
         """处理系统类型事件，提取运行时元数据。"""
         runtime_model = _runtime_str(event.get("model"))
-        runtime_permission_mode = _runtime_str(
-            event.get("permissionMode"), limit=80
-        )
-        runtime_fast_mode_state = _runtime_str(
-            event.get("fast_mode_state"), limit=40
-        )
+        runtime_permission_mode = _runtime_str(event.get("permissionMode"), limit=80)
+        runtime_fast_mode_state = _runtime_str(event.get("fast_mode_state"), limit=40)
         runtime_claude_code_version = _runtime_str(
             event.get("claude_code_version"), limit=80
         )
@@ -611,17 +607,13 @@ class Executor:
                             tool_index=tool_count,
                             tool_name=tool_name,
                             tool_id=tool_id,
-                            summary=summarize_tool_input(
-                                tool_name, block.get("input")
-                            ),
+                            summary=summarize_tool_input(tool_name, block.get("input")),
                             input_tokens=usage.input_tokens,
                             output_tokens=usage.output_tokens,
                             cache_creation_input_tokens=(
                                 usage.cache_creation_input_tokens
                             ),
-                            cache_read_input_tokens=(
-                                usage.cache_read_input_tokens
-                            ),
+                            cache_read_input_tokens=(usage.cache_read_input_tokens),
                         )
                     )
                     emitted_content_event = True
@@ -634,17 +626,13 @@ class Executor:
                         await emit(
                             RunEvent(
                                 kind="assistant_text",
-                                text=_truncate_text(
-                                    sanitize(text.strip()), 300
-                                ),
+                                text=_truncate_text(sanitize(text.strip()), 300),
                                 input_tokens=usage.input_tokens,
                                 output_tokens=usage.output_tokens,
                                 cache_creation_input_tokens=(
                                     usage.cache_creation_input_tokens
                                 ),
-                                cache_read_input_tokens=(
-                                    usage.cache_read_input_tokens
-                                ),
+                                cache_read_input_tokens=(usage.cache_read_input_tokens),
                             )
                         )
                         emitted_content_event = True
@@ -655,9 +643,7 @@ class Executor:
                     kind="usage",
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
-                    cache_creation_input_tokens=(
-                        usage.cache_creation_input_tokens
-                    ),
+                    cache_creation_input_tokens=(usage.cache_creation_input_tokens),
                     cache_read_input_tokens=usage.cache_read_input_tokens,
                 )
             )
@@ -681,10 +667,7 @@ class Executor:
             return
 
         for block in content:
-            if (
-                not isinstance(block, dict)
-                or block.get("type") != "tool_result"
-            ):
+            if not isinstance(block, dict) or block.get("type") != "tool_result":
                 continue
             tool_id = block.get("tool_use_id")
             if not isinstance(tool_id, str) or not tool_id:
@@ -697,9 +680,7 @@ class Executor:
                     tool_index=tool_indices_by_id.get(tool_id),
                     tool_name=tool_names_by_id.get(tool_id, ""),
                     tool_id=tool_id,
-                    output=summarize_tool_result_content(
-                        block.get("content")
-                    ),
+                    output=summarize_tool_result_content(block.get("content")),
                     is_error=bool(block.get("is_error", False)),
                 )
             )

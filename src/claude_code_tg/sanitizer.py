@@ -45,9 +45,7 @@ _PATTERNS = [
     ),
     # AWS session tokens
     (
-        re.compile(
-            r"\b(aws_session_token|AWS_SESSION_TOKEN)\s*=\s*\S+", re.IGNORECASE
-        ),
+        re.compile(r"\b(aws_session_token|AWS_SESSION_TOKEN)\s*=\s*\S+", re.IGNORECASE),
         "***",
     ),
     # OAuth access and refresh tokens - require at least 20 chars
