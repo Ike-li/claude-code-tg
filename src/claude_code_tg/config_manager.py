@@ -32,7 +32,6 @@ class ConfigManager:
 
     def __init__(self) -> None:
         """初始化配置管理器。"""
-        pass
 
     def find_config(self, config_arg: str | None = None) -> Path:
         """查找配置文件。

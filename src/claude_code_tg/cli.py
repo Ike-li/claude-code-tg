@@ -21,8 +21,8 @@ from claude_code_tg.cli_instances import (
     rewind_if_truncated as _rewind_if_truncated,
     show_instance_logs as _show_instance_logs,
 )
-from claude_code_tg.config_manager import ConfigManager, ConfigNotFoundError
 from claude_code_tg.cli_parser import CliCommandHandlers, build_parser as _build_parser
+from claude_code_tg.config_manager import ConfigManager, ConfigNotFoundError
 from claude_code_tg.diagnostics import (
     doctor_exit_code as _doctor_exit_code,
     fix_local_permissions as _fix_local_permissions,

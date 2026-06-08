@@ -14,8 +14,6 @@ from telegram.ext import Application, ContextTypes
 from claude_code_tg.attachments import (
     DEFAULT_ATTACHMENT_MAX_BYTES,
     DEFAULT_ATTACHMENT_MODE,
-    PROJECT_ATTACHMENT_DIRNAME,
-    prune_attachment_tree,
 )
 from claude_code_tg.bot_app import build_telegram_app
 from claude_code_tg.bot_commands import BotCommandHandlers
@@ -23,7 +21,6 @@ from claude_code_tg.bot_processing import BotMessageProcessor
 from claude_code_tg.command_view import CommandPickerStore
 from claude_code_tg.container import ServiceContainer
 from claude_code_tg.executor import (
-    Executor,
     normalize_effort,
     normalize_model,
     normalize_permission_mode,
@@ -35,7 +32,7 @@ from claude_code_tg.result_view import ResultActionStore
 from claude_code_tg.resume_view import ResumePickerStore
 from claude_code_tg.run_view import RunViewStore
 from claude_code_tg.services import AttachmentService
-from claude_code_tg.sessions import ChatSessionStore, ReplyCallback
+from claude_code_tg.sessions import ReplyCallback
 from claude_code_tg.utils import _format_uptime
 
 logger = logging.getLogger(__name__)

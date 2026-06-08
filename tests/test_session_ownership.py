@@ -5,8 +5,6 @@ Verifies that users cannot hijack other users' sessions.
 
 import uuid
 
-import pytest
-
 from claude_code_tg.sessions import ChatSessionStore
 
 

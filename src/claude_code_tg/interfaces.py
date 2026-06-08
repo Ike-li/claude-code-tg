@@ -4,8 +4,8 @@
 使用 Protocol（PEP 544 结构化子类型）而不是 ABC，提供更灵活的接口实现方式。
 """
 
-from typing import Any, Protocol, runtime_checkable
 from collections.abc import Awaitable, Callable
+from typing import Any, Protocol, runtime_checkable
 
 from claude_code_tg.executor import ExecutionResult, RunEvent
 

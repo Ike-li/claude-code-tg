@@ -3,6 +3,7 @@
 管理多个 tgcc 实例的生命周期（启动、停止、状态查询）。
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -79,7 +80,7 @@ class InstanceManager:
             return {"instances": {}}
 
         try:
-            with open(self.REGISTRY_FILE, "r", encoding="utf-8") as f:
+            with open(self.REGISTRY_FILE, encoding="utf-8") as f:
                 return json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             logger.warning("Failed to load registry: %s", e)
@@ -273,10 +274,8 @@ class InstanceManager:
             # 超时，强制 kill
             if not force:
                 logger.warning("Timeout waiting for PID %d, force killing", pid)
-                try:
+                with contextlib.suppress(ProcessLookupError):
                     os.kill(pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
 
         # 更新注册表
         registry = self._load_registry()
@@ -342,10 +341,8 @@ class InstanceManager:
 
         result = []
         for name in sorted(instances.keys()):
-            try:
+            with contextlib.suppress(ValueError):
                 result.append(self.status(name))
-            except ValueError:
-                pass
 
         return result
 
