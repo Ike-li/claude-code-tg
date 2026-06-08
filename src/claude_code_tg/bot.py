@@ -21,6 +21,7 @@ from claude_code_tg.bot_app import build_telegram_app
 from claude_code_tg.bot_commands import BotCommandHandlers
 from claude_code_tg.bot_processing import BotMessageProcessor
 from claude_code_tg.command_view import CommandPickerStore
+from claude_code_tg.container import ServiceContainer
 from claude_code_tg.executor import (
     Executor,
     normalize_effort,
@@ -49,7 +50,8 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         token: str,
         admin_ids: set[int],
         allowed_ids: set[int],
-        project_dir: str,
+        project_dir: str | None = None,
+        container: ServiceContainer | None = None,
         allowed_chat_ids: set[int] | None = None,
         timeout: int = 300,
         queue_max_size: int = 3,
@@ -70,12 +72,47 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         cli_resume_compat: bool = False,
         status_file: Path | None = None,
     ) -> None:
+        # 依赖注入：如果没有传入容器，使用传统参数创建
+        if container is None:
+            if project_dir is None:
+                raise ValueError("project_dir is required when container is not provided")
+            container = ServiceContainer.create_default(
+                project_dir=project_dir,
+                timeout=timeout,
+                queue_max_size=queue_max_size,
+                permission_mode=permission_mode,
+                model=model,
+                effort=effort,
+                status_file=status_file,
+                cli_resume_compat=cli_resume_compat,
+                draft_preview_enabled=draft_preview_enabled,
+            )
+
+        # 从容器获取核心服务
+        self.container = container
+        self.executor = container.executor
+        self.state = container.session_store
+        self.project_dir = container.project_dir
+        self.timeout = container.timeout
+        self.cli_resume_compat_enabled = container.cli_resume_compat
+        self.draft_preview_enabled = container.draft_preview_enabled
+
+        # 保留向后兼容：如果传入了 project_dir 参数，覆盖容器中的值
+        if project_dir is not None:
+            self.project_dir = project_dir
+
+        # Bot 特定配置
         self.token = token
         self.admin_ids = admin_ids
         self.allowed_ids = allowed_ids | admin_ids
         self.allowed_chat_ids = allowed_chat_ids or set()
-        self.project_dir = project_dir
-        self.timeout = timeout
+        # Bot 特定配置
+        self.token = token
+        self.admin_ids = admin_ids
+        self.allowed_ids = allowed_ids | admin_ids
+        self.allowed_chat_ids = allowed_chat_ids or set()
+
+        # 附件处理配置
         default_attachment_dir = (
             status_file.parent / "attachments"
             if status_file
@@ -83,7 +120,7 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         )
         self.input_builder = TelegramInputBuilder(
             attachment_dir=attachment_dir or default_attachment_dir,
-            project_dir=project_dir,
+            project_dir=self.project_dir,
             attachment_max_bytes=attachment_max_bytes,
             attachment_mode=attachment_mode,
         )
@@ -91,16 +128,18 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         self.attachment_max_bytes = self.input_builder.attachment_max_bytes
         self.attachment_mode = self.input_builder.attachment_mode
         self.attachment_retention_days = attachment_retention_days
+
+        # 功能开关
         self.command_menu_enabled = command_menu_enabled
-        self.draft_preview_enabled = draft_preview_enabled
         self.mini_app_enabled = mini_app_enabled
         self.mini_app_public_url = mini_app_public_url
         self.mini_app_host = mini_app_host
         self.mini_app_port = mini_app_port
         self.mini_app_menu_text = mini_app_menu_text
-        self.cli_resume_compat_enabled = cli_resume_compat
         self._mini_app_server: object | None = None
         self._mini_app_task: asyncio.Task[Any] | None = None
+
+        # 状态和缓存
         self.command_menu_cache_file = (
             status_file.parent / "command-menu.json" if status_file else None
         )
@@ -111,16 +150,10 @@ class TGBot(BotMessageProcessor, BotCommandHandlers):
         self.pending_replies = PendingReplyStore()
         self.last_prompts: dict[int, str] = {}
 
-        self.executor = Executor()
         # tg-safe command name -> Claude slash command; filled in post_init.
         self.claude_command_map: dict[str, str] = {}
-        self.state = ChatSessionStore(
-            queue_max_size=queue_max_size,
-            permission_mode=permission_mode,
-            model=model,
-            effort=effort,
-            status_file=status_file,
-        )
+
+        # 向后兼容的属性别名（指向 state 中的数据）
         self.queue_max_size = self.state.queue_max_size
         self.default_permission_mode = self.state.default_permission_mode
         self.default_model = self.state.default_model
