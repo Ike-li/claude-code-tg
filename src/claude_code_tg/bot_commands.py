@@ -180,7 +180,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         dropped = self.state.reset_chat(chat_id)
         stopped = await self.executor.stop(chat_id) if chat_id in self.busy else False
@@ -209,7 +212,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         if not context.args:
             await self._send_force_reply_prompt(
@@ -235,7 +241,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
 
         if context.args:
@@ -269,7 +278,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
 
         await self._send_resume_history(user_id, chat_id, message, context)
@@ -365,7 +377,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         stopped = await self.executor.stop(chat_id)
         if stopped:
@@ -380,7 +395,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         text = self._status_text(chat_id)
         await message.reply_text(
@@ -409,7 +427,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         if not context.args:
             await self._send_force_reply_prompt(
@@ -461,7 +482,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         if not context.args:
             await self._send_force_reply_prompt(
@@ -516,7 +540,10 @@ class BotCommandHandlers:
         if resolved is None:
             return
         user_id, chat_id, message = resolved
+        chat = update.effective_chat
         if not self._is_authorized(user_id):
+            return
+        if not self._is_chat_allowed(chat_id, chat.type if chat else None):
             return
         if not context.args:
             levels = ", ".join(EFFORT_CHOICES)
